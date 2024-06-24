@@ -4,13 +4,13 @@ type Request = {
 };
 
 function setupMessage() {
-	chrome.runtime.onMessage.addListener(function handleMessage({ action, clipText }: Request) {
+	browser.runtime.onMessage.addListener(function handleMessage({ action, clipText }: Request) {
 		if (action === 'insert') {
 			const pasteTarget = document.createElement('p');
 			pasteTarget.textContent = clipText;
 			document.querySelector('body')?.appendChild(pasteTarget);
 		} else if (action === 'remove') {
-			chrome.runtime.onMessage.removeListener(handleMessage);
+			browser.runtime.onMessage.removeListener(handleMessage);
 		}
 	});
 }
@@ -25,7 +25,7 @@ function checkClipboard(id: number) {
 		.readText()
 		.then((clipText) => {
 			if (clipText && clipText !== previousText) {
-				chrome.tabs.sendMessage(id, {
+				browser.tabs.sendMessage(id, {
 					action: 'insert',
 					clipText
 				});
@@ -35,21 +35,21 @@ function checkClipboard(id: number) {
 		.catch((error) => console.error(`Failed to read clipboard: ${error}`));
 }
 
-chrome.tabs.onUpdated.addListener(async (number, changeInfo, tab) => {
+browser.tabs.onUpdated.addListener(async (number, changeInfo, tab) => {
 	if (changeInfo.status == 'complete' && tab.url === 'http://localhost:5174/') {
 		console.log('number:', number);
 		console.log('tab:', tab);
 
 		if (tab.id) {
-			await chrome.scripting
+			await browser.scripting
 				.executeScript({ target: { tabId: tab.id }, func: setupMessage })
 				.catch((error) => console.error(`Error executing the content script: ${error}`));
 			const id = setInterval(checkClipboard, 2000, tab.id);
 			timer = { id, interval: 2000 };
 			console.log('timer:', timer);
 
-			chrome.action.setBadgeBackgroundColor({ tabId: tab.id, color: 'green' });
-			chrome.action.setBadgeText({
+			browser.action.setBadgeBackgroundColor({ tabId: tab.id, color: 'green' });
+			browser.action.setBadgeText({
 				tabId: tab.id,
 				text: 'ON'
 			});
@@ -57,8 +57,8 @@ chrome.tabs.onUpdated.addListener(async (number, changeInfo, tab) => {
 	}
 });
 
-// chrome.action.onClicked.addListener(() =>
-// 	chrome.tabs
+// browser.action.onClicked.addListener(() =>
+// 	browser.tabs
 // 		.query({ active: true, currentWindow: true })
 // 		.then((tabs) => {
 // 			// console.log('tabs:', tabs);
