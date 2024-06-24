@@ -46,6 +46,7 @@ chrome.tabs.onUpdated.addListener(async (number, changeInfo, tab) => {
 				.catch((error) => console.error(`Error executing the content script: ${error}`));
 			const id = setInterval(checkClipboard, 2000, tab.id);
 			timer = { id, interval: 2000 };
+			console.log('timer:', timer);
 
 			chrome.action.setBadgeBackgroundColor({ tabId: tab.id, color: 'green' });
 			chrome.action.setBadgeText({
