@@ -1,18 +1,20 @@
-chrome.runtime.onMessage.addListener(handleMessages);
+import type { Request } from '$lib/types';
 
-async function handleMessages(message) {
+chrome.runtime.onMessage.addListener(handleWorkerMessage);
+
+async function handleWorkerMessage({ target, type, data }: Request<number>) {
 	// Return early if this message isn't meant for the offscreen document.
-	if (message.target !== 'offscreen-doc') {
+	if (target !== 'offscreen-doc') {
 		return;
 	}
 
 	// Dispatch the message to an appropriate handler.
-	switch (message.type) {
+	switch (type) {
 		case 'read-data-from-clipboard':
-			handleClipboardRead(message.data);
+			handleClipboardRead(data);
 			break;
 		default:
-			console.warn(`Unexpected message type received: '${message.type}'.`);
+			console.warn(`Unexpected message type received: '${type}'.`);
 	}
 }
 

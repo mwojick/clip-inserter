@@ -1,13 +1,11 @@
-type Request = {
-	data: string;
-	type: string;
-	target: string;
-};
+import type { Request } from '$lib/types';
 
 let currentTabId: number | null = null;
 let previousText = '';
 
-chrome.runtime.onMessage.addListener(function handleMessage({ target, type, data }: Request) {
+chrome.runtime.onMessage.addListener(handleOffscreenMessage);
+
+function handleOffscreenMessage({ target, type, data }: Request<string>) {
 	if (target !== 'service-worker') {
 		return;
 	}
@@ -28,10 +26,12 @@ chrome.runtime.onMessage.addListener(function handleMessage({ target, type, data
 		default:
 			console.warn(`Unexpected message type received: '${type}'.`);
 	}
-});
+}
 
-function setupMessage() {
-	chrome.runtime.onMessage.addListener(function handleMessage({ target, type, data }: Request) {
+function setupContentMessage() {
+	chrome.runtime.onMessage.addListener(handleWorkerMessage);
+
+	function handleWorkerMessage({ target, type, data }: Request<string>) {
 		if (target !== 'content-script') {
 			return;
 		}
@@ -41,9 +41,9 @@ function setupMessage() {
 			pasteTarget.textContent = data;
 			document.querySelector('body')?.appendChild(pasteTarget);
 		} else if (type === 'remove') {
-			chrome.runtime.onMessage.removeListener(handleMessage);
+			chrome.runtime.onMessage.removeListener(handleWorkerMessage);
 		}
-	});
+	}
 }
 
 chrome.tabs.onUpdated.addListener(async (number, changeInfo, tab) => {
@@ -54,7 +54,7 @@ chrome.tabs.onUpdated.addListener(async (number, changeInfo, tab) => {
 		if (tab.id) {
 			currentTabId = tab.id;
 			await chrome.scripting
-				.executeScript({ target: { tabId: tab.id }, func: setupMessage })
+				.executeScript({ target: { tabId: tab.id }, func: setupContentMessage })
 				.catch((error) => console.error(`Error executing the content script: ${error}`));
 
 			await readFromClipboard(1000);
@@ -73,13 +73,7 @@ chrome.tabs.onUpdated.addListener(async (number, changeInfo, tab) => {
 // `document.execCommand()`. To work around this, we'll create an offscreen
 // document and delegate reading the clipboard to it.
 async function readFromClipboard(pollingRate: number) {
-	// await chrome.offscreen.createDocument({
-	// 	url: 'offscreen.html',
-	// 	reasons: [chrome.offscreen.Reason.CLIPBOARD],
-	// 	justification: 'Write text to the clipboard.'
-	// });
-
-	await setupOffscreenDocument('offscreen.html');
+	await setupOffscreenDocument('src/offscreen/index.html');
 
 	// Now that we have an offscreen document, we can dispatch the message.
 	chrome.runtime.sendMessage({
@@ -111,7 +105,7 @@ async function setupOffscreenDocument(path: string) {
 		creating = chrome.offscreen.createDocument({
 			url: path,
 			reasons: [chrome.offscreen.Reason.CLIPBOARD],
-			justification: 'Write text to the clipboard.'
+			justification: 'Read text from the clipboard.'
 		});
 		await creating;
 		creating = null;

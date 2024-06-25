@@ -17,7 +17,7 @@ export default defineConfig({
 	build: {
 		rollupOptions: {
 			input: {
-				offscreen: fileURLToPath(new URL('./offscreen.html', import.meta.url))
+				offscreen: fileURLToPath(new URL('./src/offscreen/index.html', import.meta.url))
 			}
 		}
 	}
