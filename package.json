@@ -16,6 +16,7 @@
 		"@tsconfig/svelte": "^5.0.4",
 		"@types/chrome": "^0.0.268",
 		"@types/eslint": "^8.56.0",
+		"@types/node": "^20.14.8",
 		"@typescript-eslint/eslint-plugin": "^7.0.0",
 		"@typescript-eslint/parser": "^7.0.0",
 		"eslint": "^8.56.0",

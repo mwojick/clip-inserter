@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import { fileURLToPath } from 'url';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { crx } from '@crxjs/vite-plugin';
 import manifest from './manifest.json' assert { type: 'json' };
@@ -11,6 +12,13 @@ export default defineConfig({
 		strictPort: true,
 		hmr: {
 			port: 5173
+		}
+	},
+	build: {
+		rollupOptions: {
+			input: {
+				offscreen: fileURLToPath(new URL('./offscreen.html', import.meta.url))
+			}
 		}
 	}
 });

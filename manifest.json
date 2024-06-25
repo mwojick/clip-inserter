@@ -3,10 +3,17 @@
 	"name": "CRXJS Svelte Vite Example",
 	"version": "1.0.0",
 	"action": { "default_popup": "index.html" },
-	"options_page": "index.html",
-	"permissions": ["tabs", "activeTab", "scripting", "clipboardRead", "storage"],
+	"permissions": [
+		"tabs",
+		"activeTab",
+		"scripting",
+		"clipboardRead",
+		"clipboardWrite",
+		"storage",
+		"offscreen"
+	],
 	"host_permissions": ["http://*/", "https://*/*"],
 	"background": {
-		"service_worker": "src/background.ts"
+		"service_worker": "src/service_worker.ts"
 	}
 }
