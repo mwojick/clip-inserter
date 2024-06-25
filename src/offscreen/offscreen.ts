@@ -39,27 +39,23 @@ let interval: NodeJS.Timeout | null = null;
 // but offscreen documents cannot be focused.
 // As such, we have to fall back to `document.execCommand()`.
 async function handleClipboardRead(pollingRate = 1000) {
-	try {
-		if (typeof pollingRate !== 'number') {
-			throw new TypeError(`Value provided must be a 'string', got '${typeof pollingRate}'.`);
-		}
-
-		if (interval) {
-			clearInterval(interval);
-		}
-		interval = setInterval(() => {
-			textEl.value = '';
-			textEl.select();
-			document.execCommand('paste');
-
-			chrome.runtime.sendMessage({
-				target: 'service-worker',
-				type: 'send-text-over',
-				data: textEl.value
-			});
-		}, pollingRate);
-	} finally {
-		// Job's done! Close the offscreen document.
-		// window.close();
+	if (typeof pollingRate !== 'number') {
+		throw new TypeError(`Value provided must be a 'number', got '${typeof pollingRate}'.`);
 	}
+
+	if (interval) {
+		clearInterval(interval);
+	}
+
+	interval = setInterval(() => {
+		textEl.value = '';
+		textEl.select();
+		document.execCommand('paste');
+
+		chrome.runtime.sendMessage({
+			target: 'service-worker',
+			type: 'send-text-over',
+			data: textEl.value
+		});
+	}, pollingRate);
 }

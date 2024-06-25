@@ -1,4 +1,5 @@
 import type { Request } from '$lib/types';
+import { readFromClipboard } from './read-clipboard';
 
 let currentTabId: number | null = null;
 let previousText = '';
@@ -28,7 +29,13 @@ function handleOffscreenMessage({ target, type, data }: Request<string>) {
 	}
 }
 
-function setupContentMessage() {
+async function setupContentMessage() {
+	try {
+		await navigator.clipboard.writeText('');
+	} catch (error) {
+		console.error(error);
+	}
+
 	chrome.runtime.onMessage.addListener(handleWorkerMessage);
 
 	function handleWorkerMessage({ target, type, data }: Request<string>) {
@@ -57,7 +64,7 @@ chrome.tabs.onUpdated.addListener(async (number, changeInfo, tab) => {
 				.executeScript({ target: { tabId: tab.id }, func: setupContentMessage })
 				.catch((error) => console.error(`Error executing the content script: ${error}`));
 
-			await readFromClipboard(1000);
+			await readFromClipboard(500);
 
 			chrome.action.setBadgeBackgroundColor({ tabId: tab.id, color: 'green' });
 			chrome.action.setBadgeText({
@@ -67,55 +74,3 @@ chrome.tabs.onUpdated.addListener(async (number, changeInfo, tab) => {
 		}
 	}
 });
-
-// Solution 1 - As of Jan 2023, service workers cannot directly interact with
-// the system clipboard using either `navigator.clipboard` or
-// `document.execCommand()`. To work around this, we'll create an offscreen
-// document and delegate reading the clipboard to it.
-async function readFromClipboard(pollingRate: number) {
-	await setupOffscreenDocument('src/offscreen/index.html');
-
-	// Now that we have an offscreen document, we can dispatch the message.
-	chrome.runtime.sendMessage({
-		target: 'offscreen-doc',
-		type: 'read-data-from-clipboard',
-		data: pollingRate
-	});
-}
-
-// A global promise to avoid concurrency issues
-let creating: Promise<void> | null;
-async function setupOffscreenDocument(path: string) {
-	// Check all windows controlled by the service worker to see if one
-	// of them is the offscreen document with the given path
-	const offscreenUrl = chrome.runtime.getURL(path);
-	const existingContexts = await chrome.runtime.getContexts({
-		contextTypes: [chrome.runtime.ContextType.OFFSCREEN_DOCUMENT],
-		documentUrls: [offscreenUrl]
-	});
-
-	if (existingContexts.length > 0) {
-		return;
-	}
-
-	// create offscreen document
-	if (creating) {
-		await creating;
-	} else {
-		creating = chrome.offscreen.createDocument({
-			url: path,
-			reasons: [chrome.offscreen.Reason.CLIPBOARD],
-			justification: 'Read text from the clipboard.'
-		});
-		await creating;
-		creating = null;
-	}
-}
-
-// Solution 2 – Once extension service workers can use the Clipboard API,
-// replace the offscreen document based implementation with something like this.
-//
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function readFromClipboardV2() {
-	navigator.clipboard.readText().then((text) => text);
-}
