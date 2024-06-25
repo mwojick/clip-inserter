@@ -21,6 +21,13 @@ async function handleMessages(message) {
 //  2. select the node's content using this element's `.select()` method.
 const textEl = document.querySelector('#text') as HTMLTextAreaElement;
 
+// Prevent non-text from being pasted
+textEl.addEventListener('paste', (e: ClipboardEvent) => {
+	if (e.clipboardData?.getData('text/plain') === '') {
+		e.preventDefault();
+	}
+});
+
 let interval: NodeJS.Timeout | null = null;
 
 // Use the offscreen document's `document` interface to write a new value to the
@@ -36,7 +43,6 @@ async function handleClipboardRead(pollingRate = 1000) {
 		}
 
 		if (interval) {
-			console.log('interval:', interval);
 			clearInterval(interval);
 		}
 		interval = setInterval(() => {
@@ -44,13 +50,10 @@ async function handleClipboardRead(pollingRate = 1000) {
 			textEl.select();
 			document.execCommand('paste');
 
-			const content = textEl.value;
-			console.log('content:', content);
-
 			chrome.runtime.sendMessage({
+				target: 'service-worker',
 				type: 'send-text-over',
-				target: 'background',
-				data: content
+				data: textEl.value
 			});
 		}, pollingRate);
 	} finally {

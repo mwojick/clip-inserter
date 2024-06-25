@@ -1,53 +1,50 @@
 type Request = {
-	action: 'insert' | 'remove';
-	clipText: string;
-};
-
-function setupMessage() {
-	chrome.runtime.onMessage.addListener(function handleMessage({ action, clipText }: Request) {
-		console.log('action:', action);
-		if (action === 'insert') {
-			const pasteTarget = document.createElement('p');
-			pasteTarget.textContent = clipText;
-			document.querySelector('body')?.appendChild(pasteTarget);
-		} else if (action === 'remove') {
-			chrome.runtime.onMessage.removeListener(handleMessage);
-		}
-	});
-}
-
-let previousText = '';
-
-type Req = {
 	data: string;
 	type: string;
 	target: string;
 };
 
 let currentTabId: number | null = null;
+let previousText = '';
 
-chrome.runtime.onMessage.addListener(function handleMessage(message: Req) {
-	if (message.target !== 'background') {
+chrome.runtime.onMessage.addListener(function handleMessage({ target, type, data }: Request) {
+	if (target !== 'service-worker') {
 		return;
 	}
 
-	const content = message.data;
-	switch (message.type) {
+	switch (type) {
 		case 'send-text-over':
-			console.log('CONTENT:', message.data);
+			console.log('CONTENT:', data);
 
-			if (currentTabId && content && content !== previousText) {
+			if (currentTabId && data && data !== previousText) {
 				chrome.tabs.sendMessage(currentTabId, {
-					action: 'insert',
-					clipText: content
+					target: 'content-script',
+					type: 'insert',
+					data
 				});
-				previousText = content;
+				previousText = data;
 			}
 			break;
 		default:
-			console.warn(`Unexpected message type received: '${message.type}'.`);
+			console.warn(`Unexpected message type received: '${type}'.`);
 	}
 });
+
+function setupMessage() {
+	chrome.runtime.onMessage.addListener(function handleMessage({ target, type, data }: Request) {
+		if (target !== 'content-script') {
+			return;
+		}
+
+		if (type === 'insert') {
+			const pasteTarget = document.createElement('p');
+			pasteTarget.textContent = data;
+			document.querySelector('body')?.appendChild(pasteTarget);
+		} else if (type === 'remove') {
+			chrome.runtime.onMessage.removeListener(handleMessage);
+		}
+	});
+}
 
 chrome.tabs.onUpdated.addListener(async (number, changeInfo, tab) => {
 	if (changeInfo.status == 'complete' && tab.url === 'http://localhost:5174/') {
@@ -75,7 +72,7 @@ chrome.tabs.onUpdated.addListener(async (number, changeInfo, tab) => {
 // the system clipboard using either `navigator.clipboard` or
 // `document.execCommand()`. To work around this, we'll create an offscreen
 // document and delegate reading the clipboard to it.
-async function readFromClipboard(value: number) {
+async function readFromClipboard(pollingRate: number) {
 	// await chrome.offscreen.createDocument({
 	// 	url: 'offscreen.html',
 	// 	reasons: [chrome.offscreen.Reason.CLIPBOARD],
@@ -86,9 +83,9 @@ async function readFromClipboard(value: number) {
 
 	// Now that we have an offscreen document, we can dispatch the message.
 	chrome.runtime.sendMessage({
-		type: 'read-data-from-clipboard',
 		target: 'offscreen-doc',
-		data: value
+		type: 'read-data-from-clipboard',
+		data: pollingRate
 	});
 }
 
