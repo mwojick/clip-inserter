@@ -55,7 +55,7 @@ async function handleClipboardRead(pollingRate = 1000) {
 		chrome.runtime.sendMessage({
 			target: 'service-worker',
 			type: 'send-text-over',
-			data: textEl.value
+			data: textEl.value.trim()
 		});
 	}, pollingRate);
 }

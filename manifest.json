@@ -10,7 +10,8 @@
 		"clipboardRead",
 		"clipboardWrite",
 		"storage",
-		"offscreen"
+		"offscreen",
+		"webNavigation"
 	],
 	"host_permissions": ["http://*/", "https://*/*"],
 	"background": {

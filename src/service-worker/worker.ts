@@ -53,30 +53,64 @@ async function setupContentMessage() {
 	}
 }
 
-chrome.tabs.onUpdated.addListener(async (number, changeInfo, tab) => {
-	if (changeInfo.status == 'complete' && tab.url === 'http://localhost:5174/') {
-		console.log('number:', number);
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+	if (changeInfo.status == 'complete' && tab.active && tab.url === 'http://localhost:5174/') {
+		if (currentTabId !== tabId) {
+			// clean up old tab when refreshing on a new tab with same url
+			if (currentTabId) {
+				try {
+					await chrome.tabs.sendMessage(currentTabId, {
+						target: 'content-script',
+						type: 'remove'
+					});
+					await chrome.action.setBadgeText({
+						tabId: currentTabId,
+						text: ''
+					});
+				} catch (error) {
+					console.error(error);
+				}
+			}
 
-		if (tab.id) {
-			currentTabId = tab.id;
 			previousText = '';
 			await chrome.scripting
-				.executeScript({ target: { tabId: tab.id }, func: setupContentMessage })
+				.executeScript({ target: { tabId }, func: setupContentMessage })
 				.catch((error) => console.error(`Error executing the content script: ${error}`));
+			currentTabId = tabId;
 
 			await readFromClipboard(500);
 
-			chrome.action.setBadgeBackgroundColor({ tabId: tab.id, color: 'green' });
+			chrome.action.setBadgeBackgroundColor({ tabId, color: 'green' });
 			chrome.action.setBadgeText({
-				tabId: tab.id,
+				tabId,
 				text: 'ON'
 			});
 		}
 	}
 });
 
+chrome.webNavigation.onBeforeNavigate.addListener(async ({ tabId }) => {
+	// clean up tab when navigating away
+	if (currentTabId === tabId) {
+		try {
+			await chrome.tabs.sendMessage(currentTabId, {
+				target: 'content-script',
+				type: 'remove'
+			});
+			await chrome.offscreen.closeDocument();
+			await chrome.action.setBadgeText({
+				tabId: currentTabId,
+				text: ''
+			});
+			currentTabId = null;
+		} catch (error) {
+			console.log(error);
+		}
+	}
+});
+
 chrome.tabs.onRemoved.addListener(async (tabId) => {
-	if (tabId === currentTabId) {
+	if (currentTabId === tabId) {
 		try {
 			await chrome.offscreen.closeDocument();
 			currentTabId = null;
