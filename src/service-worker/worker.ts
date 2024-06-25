@@ -56,10 +56,10 @@ async function setupContentMessage() {
 chrome.tabs.onUpdated.addListener(async (number, changeInfo, tab) => {
 	if (changeInfo.status == 'complete' && tab.url === 'http://localhost:5174/') {
 		console.log('number:', number);
-		console.log('tab:', tab);
 
 		if (tab.id) {
 			currentTabId = tab.id;
+			previousText = '';
 			await chrome.scripting
 				.executeScript({ target: { tabId: tab.id }, func: setupContentMessage })
 				.catch((error) => console.error(`Error executing the content script: ${error}`));
@@ -71,6 +71,17 @@ chrome.tabs.onUpdated.addListener(async (number, changeInfo, tab) => {
 				tabId: tab.id,
 				text: 'ON'
 			});
+		}
+	}
+});
+
+chrome.tabs.onRemoved.addListener(async (tabId) => {
+	if (tabId === currentTabId) {
+		try {
+			await chrome.offscreen.closeDocument();
+			currentTabId = null;
+		} catch (error) {
+			console.error(error);
 		}
 	}
 });
