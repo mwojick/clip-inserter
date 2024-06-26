@@ -3,7 +3,6 @@ import { TARGET, TYPE } from '$lib/constants';
 import { readFromClipboard } from './read-clipboard';
 
 let currentTabId: number | null = null;
-let previousText = '';
 
 chrome.runtime.onMessage.addListener(handleOffscreenMessage);
 
@@ -12,20 +11,16 @@ async function handleOffscreenMessage({ target, type, data }: Request<string>) {
 		return;
 	}
 
-	if (type === TYPE.CLIPBOARD_TEXT) {
-		console.log('CONTENT:', data);
-
-		if (currentTabId && data && data !== previousText) {
-			previousText = data;
-			try {
-				await chrome.tabs.sendMessage(currentTabId, {
-					target: TARGET.CONTENT_SCRIPT,
-					type: TYPE.INSERT,
-					data
-				});
-			} catch (error) {
-				console.error(error);
-			}
+	if (type === TYPE.CLIPBOARD_TEXT && currentTabId) {
+		console.log('CLIPBOARD_TEXT:', data);
+		try {
+			await chrome.tabs.sendMessage(currentTabId, {
+				target: TARGET.CONTENT_SCRIPT,
+				type: TYPE.INSERT,
+				data
+			});
+		} catch (error) {
+			console.error(error);
 		}
 	} else {
 		console.warn(`Unexpected message type received: '${type}'.`);
@@ -62,7 +57,7 @@ async function setupContentMessage(TARG: typeof TARGET, TYP: typeof TYPE) {
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 	if (changeInfo.status == 'complete' && tab.active && tab.url === 'http://localhost:5174/') {
 		if (currentTabId !== tabId) {
-			// clean up old tab when refreshing on a new tab with same url
+			// clean up old tab when creating a new tab with same url
 			if (currentTabId) {
 				try {
 					await Promise.all([
@@ -80,7 +75,6 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 				}
 			}
 
-			previousText = '';
 			currentTabId = tabId;
 
 			try {
@@ -93,7 +87,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 					readFromClipboard(500)
 				]);
 				await Promise.all([
-					chrome.action.setBadgeBackgroundColor({ tabId, color: 'green' }),
+					chrome.action.setBadgeBackgroundColor({ tabId, color: '#98a6f7' }),
 					chrome.action.setBadgeText({
 						tabId,
 						text: 'ON'
@@ -106,21 +100,24 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 	}
 });
 
-chrome.webNavigation.onBeforeNavigate.addListener(async ({ tabId }) => {
-	// clean up tab when navigating away
+chrome.webNavigation.onBeforeNavigate.addListener(async ({ tabId, url }) => {
+	// clean up tab when navigating away or refreshing
 	if (currentTabId === tabId) {
 		try {
-			await Promise.all([
+			const promises = [
 				chrome.tabs.sendMessage(currentTabId, {
 					target: TARGET.CONTENT_SCRIPT,
 					type: TYPE.REMOVE
 				}),
-				chrome.offscreen.closeDocument(),
 				chrome.action.setBadgeText({
 					tabId: currentTabId,
 					text: ''
 				})
-			]);
+			];
+			if (url !== 'http://localhost:5174/') {
+				promises.push(chrome.offscreen.closeDocument());
+			}
+			await Promise.all(promises);
 
 			currentTabId = null;
 		} catch (error) {

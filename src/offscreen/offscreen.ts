@@ -29,6 +29,7 @@ textEl.addEventListener('paste', (e: ClipboardEvent) => {
 });
 
 let interval: NodeJS.Timeout | null = null;
+let previousText = '';
 
 // Use the offscreen document's `document` interface to write a new value to the
 // system clipboard.
@@ -43,17 +44,22 @@ function handleClipboardRead(pollingRate = 1000) {
 
 	if (interval) {
 		clearInterval(interval);
+		previousText = '';
 	}
 
 	interval = setInterval(() => {
 		textEl.value = '';
 		textEl.select();
 		document.execCommand('paste');
+		const newText = textEl.value.trim();
 
-		chrome.runtime.sendMessage({
-			target: TARGET.SERVICE_WORKER,
-			type: TYPE.CLIPBOARD_TEXT,
-			data: textEl.value.trim()
-		});
+		if (newText && newText !== previousText) {
+			previousText = newText;
+			chrome.runtime.sendMessage({
+				target: TARGET.SERVICE_WORKER,
+				type: TYPE.CLIPBOARD_TEXT,
+				data: newText
+			});
+		}
 	}, pollingRate);
 }
