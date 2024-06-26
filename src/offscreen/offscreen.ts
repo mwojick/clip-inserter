@@ -1,14 +1,15 @@
 import type { Request } from '$lib/types';
+import { TARGET, TYPE } from '$lib/constants';
 
 chrome.runtime.onMessage.addListener(handleWorkerMessage);
 
 function handleWorkerMessage({ target, type, data }: Request<number>) {
 	// Return early if this message isn't meant for the offscreen document.
-	if (target !== 'offscreen-doc') {
+	if (target !== TARGET.OFFSCREEN_DOC) {
 		return;
 	}
 
-	if (type === 'read-data-from-clipboard') {
+	if (type === TYPE.READ_DATA_FROM_CLIPBOARD) {
 		handleClipboardRead(data);
 	} else {
 		console.warn(`Unexpected message type received: '${type}'.`);
@@ -50,8 +51,8 @@ function handleClipboardRead(pollingRate = 1000) {
 		document.execCommand('paste');
 
 		chrome.runtime.sendMessage({
-			target: 'service-worker',
-			type: 'clipboard-text',
+			target: TARGET.SERVICE_WORKER,
+			type: TYPE.CLIPBOARD_TEXT,
 			data: textEl.value.trim()
 		});
 	}, pollingRate);

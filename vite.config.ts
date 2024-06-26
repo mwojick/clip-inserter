@@ -14,6 +14,11 @@ export default defineConfig({
 			port: 5173
 		}
 	},
+	resolve: {
+		alias: {
+			$lib: '/src/lib'
+		}
+	},
 	build: {
 		rollupOptions: {
 			input: {

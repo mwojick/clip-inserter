@@ -1,3 +1,5 @@
+import { TARGET, TYPE } from '$lib/constants';
+
 // Solution 1 - As of Jan 2023, service workers cannot directly interact with
 // the system clipboard using either `navigator.clipboard` or
 // `document.execCommand()`. To work around this, we'll create an offscreen
@@ -7,8 +9,8 @@ export async function readFromClipboard(pollingRate: number) {
 
 	// Now that we have an offscreen document, we can dispatch the message.
 	chrome.runtime.sendMessage({
-		target: 'offscreen-doc',
-		type: 'read-data-from-clipboard',
+		target: TARGET.OFFSCREEN_DOC,
+		type: TYPE.READ_DATA_FROM_CLIPBOARD,
 		data: pollingRate
 	});
 }

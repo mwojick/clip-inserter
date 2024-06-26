@@ -1,4 +1,5 @@
 import type { Request } from '$lib/types';
+import { TARGET, TYPE } from '$lib/constants';
 import { readFromClipboard } from './read-clipboard';
 
 let currentTabId: number | null = null;
@@ -7,19 +8,19 @@ let previousText = '';
 chrome.runtime.onMessage.addListener(handleOffscreenMessage);
 
 async function handleOffscreenMessage({ target, type, data }: Request<string>) {
-	if (target !== 'service-worker') {
+	if (target !== TARGET.SERVICE_WORKER) {
 		return;
 	}
 
-	if (type === 'clipboard-text') {
+	if (type === TYPE.CLIPBOARD_TEXT) {
 		console.log('CONTENT:', data);
 
 		if (currentTabId && data && data !== previousText) {
 			previousText = data;
 			try {
 				await chrome.tabs.sendMessage(currentTabId, {
-					target: 'content-script',
-					type: 'insert',
+					target: TARGET.CONTENT_SCRIPT,
+					type: TYPE.INSERT,
 					data
 				});
 			} catch (error) {
@@ -32,7 +33,7 @@ async function handleOffscreenMessage({ target, type, data }: Request<string>) {
 }
 
 // this runs within the context of the page
-async function setupContentMessage() {
+async function setupContentMessage(TARG: typeof TARGET, TYP: typeof TYPE) {
 	try {
 		await navigator.clipboard.writeText('');
 	} catch (error) {
@@ -42,15 +43,15 @@ async function setupContentMessage() {
 	chrome.runtime.onMessage.addListener(handleWorkerMessage);
 
 	function handleWorkerMessage({ target, type, data }: Request<string>) {
-		if (target !== 'content-script') {
+		if (target !== TARG.CONTENT_SCRIPT) {
 			return;
 		}
 
-		if (type === 'insert') {
+		if (type === TYP.INSERT) {
 			const pasteTarget = document.createElement('p');
 			pasteTarget.textContent = data;
 			document.querySelector('body')?.appendChild(pasteTarget);
-		} else if (type === 'remove') {
+		} else if (type === TYP.REMOVE) {
 			chrome.runtime.onMessage.removeListener(handleWorkerMessage);
 		} else {
 			console.warn(`Unexpected message type received: '${type}'.`);
@@ -66,8 +67,8 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 				try {
 					await Promise.all([
 						chrome.tabs.sendMessage(currentTabId, {
-							target: 'content-script',
-							type: 'remove'
+							target: TARGET.CONTENT_SCRIPT,
+							type: TYPE.REMOVE
 						}),
 						chrome.action.setBadgeText({
 							tabId: currentTabId,
@@ -84,7 +85,11 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 
 			try {
 				await Promise.all([
-					chrome.scripting.executeScript({ target: { tabId }, func: setupContentMessage }),
+					chrome.scripting.executeScript({
+						target: { tabId },
+						func: setupContentMessage,
+						args: [TARGET, TYPE]
+					}),
 					readFromClipboard(500)
 				]);
 				await Promise.all([
@@ -107,8 +112,8 @@ chrome.webNavigation.onBeforeNavigate.addListener(async ({ tabId }) => {
 		try {
 			await Promise.all([
 				chrome.tabs.sendMessage(currentTabId, {
-					target: 'content-script',
-					type: 'remove'
+					target: TARGET.CONTENT_SCRIPT,
+					type: TYPE.REMOVE
 				}),
 				chrome.offscreen.closeDocument(),
 				chrome.action.setBadgeText({
