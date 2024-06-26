@@ -2,19 +2,16 @@ import type { Request } from '$lib/types';
 
 chrome.runtime.onMessage.addListener(handleWorkerMessage);
 
-async function handleWorkerMessage({ target, type, data }: Request<number>) {
+function handleWorkerMessage({ target, type, data }: Request<number>) {
 	// Return early if this message isn't meant for the offscreen document.
 	if (target !== 'offscreen-doc') {
 		return;
 	}
 
-	// Dispatch the message to an appropriate handler.
-	switch (type) {
-		case 'read-data-from-clipboard':
-			handleClipboardRead(data);
-			break;
-		default:
-			console.warn(`Unexpected message type received: '${type}'.`);
+	if (type === 'read-data-from-clipboard') {
+		handleClipboardRead(data);
+	} else {
+		console.warn(`Unexpected message type received: '${type}'.`);
 	}
 }
 
@@ -38,7 +35,7 @@ let interval: NodeJS.Timeout | null = null;
 // The `navigator.clipboard` API requires that the window is focused,
 // but offscreen documents cannot be focused.
 // As such, we have to fall back to `document.execCommand()`.
-async function handleClipboardRead(pollingRate = 1000) {
+function handleClipboardRead(pollingRate = 1000) {
 	if (typeof pollingRate !== 'number') {
 		throw new TypeError(`Value provided must be a 'number', got '${typeof pollingRate}'.`);
 	}
@@ -54,7 +51,7 @@ async function handleClipboardRead(pollingRate = 1000) {
 
 		chrome.runtime.sendMessage({
 			target: 'service-worker',
-			type: 'send-text-over',
+			type: 'clipboard-text',
 			data: textEl.value.trim()
 		});
 	}, pollingRate);
