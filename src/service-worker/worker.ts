@@ -10,19 +10,22 @@ async function handleOffscreenMessage({ target, type, data }: Request<string>) {
 	if (target !== TARGET.SERVICE_WORKER) {
 		return;
 	}
-
-	if (type === TYPE.CLIPBOARD_TEXT && currentTabId) {
+	if (type !== TYPE.CLIPBOARD_TEXT) {
+		console.warn(`Unexpected message type received: '${type}'.`);
+		return;
+	}
+	if (currentTabId) {
 		try {
 			await chrome.tabs.sendMessage(currentTabId, {
 				target: TARGET.CONTENT_SCRIPT,
-				type: TYPE.INSERT,
+				type: TYPE.INSERT_TEXT,
 				data
 			});
 		} catch (error) {
 			console.error(error);
 		}
 	} else {
-		console.warn(`Unexpected message type received: '${type}'.`);
+		console.error('No currentTabId found.');
 	}
 }
 
@@ -41,11 +44,11 @@ async function setupContentMessage(TARG: typeof TARGET, TYP: typeof TYPE) {
 			return;
 		}
 
-		if (type === TYP.INSERT) {
+		if (type === TYP.INSERT_TEXT) {
 			const pasteTarget = document.createElement('p');
 			pasteTarget.textContent = data;
 			document.querySelector('body')?.appendChild(pasteTarget);
-		} else if (type === TYP.REMOVE) {
+		} else if (type === TYP.REMOVE_LISTENER) {
 			chrome.runtime.onMessage.removeListener(handleWorkerMessage);
 		} else {
 			console.warn(`Unexpected message type received: '${type}'.`);
@@ -62,7 +65,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 					await Promise.all([
 						chrome.tabs.sendMessage(currentTabId, {
 							target: TARGET.CONTENT_SCRIPT,
-							type: TYPE.REMOVE
+							type: TYPE.REMOVE_LISTENER
 						}),
 						chrome.action.setBadgeText({
 							tabId: currentTabId,
@@ -104,7 +107,7 @@ chrome.webNavigation.onBeforeNavigate.addListener(async ({ tabId, url }) => {
 			const promises = [
 				chrome.tabs.sendMessage(currentTabId, {
 					target: TARGET.CONTENT_SCRIPT,
-					type: TYPE.REMOVE
+					type: TYPE.REMOVE_LISTENER
 				}),
 				chrome.action.setBadgeText({
 					tabId: currentTabId,

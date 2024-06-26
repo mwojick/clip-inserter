@@ -7,6 +7,6 @@ export const TARGET = {
 export const TYPE = {
 	READ_DATA_FROM_CLIPBOARD: 'read-data-from-clipboard',
 	CLIPBOARD_TEXT: 'clipboard-text',
-	INSERT: 'insert',
-	REMOVE: 'remove'
+	INSERT_TEXT: 'insert-text',
+	REMOVE_LISTENER: 'remove-listener'
 };
