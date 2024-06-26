@@ -12,7 +12,6 @@ async function handleOffscreenMessage({ target, type, data }: Request<string>) {
 	}
 
 	if (type === TYPE.CLIPBOARD_TEXT && currentTabId) {
-		console.log('CLIPBOARD_TEXT:', data);
 		try {
 			await chrome.tabs.sendMessage(currentTabId, {
 				target: TARGET.CONTENT_SCRIPT,
@@ -78,14 +77,12 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 			currentTabId = tabId;
 
 			try {
-				await Promise.all([
-					chrome.scripting.executeScript({
-						target: { tabId },
-						func: setupContentMessage,
-						args: [TARGET, TYPE]
-					}),
-					readFromClipboard(500)
-				]);
+				await chrome.scripting.executeScript({
+					target: { tabId },
+					func: setupContentMessage,
+					args: [TARGET, TYPE]
+				});
+				await readFromClipboard(500);
 				await Promise.all([
 					chrome.action.setBadgeBackgroundColor({ tabId, color: '#98a6f7' }),
 					chrome.action.setBadgeText({
@@ -121,7 +118,7 @@ chrome.webNavigation.onBeforeNavigate.addListener(async ({ tabId, url }) => {
 
 			currentTabId = null;
 		} catch (error) {
-			console.log(error);
+			console.error(error);
 		}
 	}
 });
