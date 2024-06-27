@@ -1,13 +1,21 @@
 <script lang="ts">
+	const minRange = 100;
+	const maxRange = 3000;
+
 	let currentUrl: string = $state('');
-	let options: { allowedURL: string; popupTabId: number | null } = $state({
+	let currentTabId: number | null = $state(null);
+	let options: { popupTabId: number | null; allowedURL: string; pollingInterval: number } = $state({
+		popupTabId: null,
 		allowedURL: '',
-		popupTabId: null
+		pollingInterval: 500
 	});
 
-	let isClipEnabled = $derived(options.allowedURL === currentUrl);
+	let isClipEnabled = $derived(
+		options.allowedURL === currentUrl && options.popupTabId === currentTabId
+	);
 
 	$inspect('currentUrl', currentUrl);
+	$inspect('currentTabId', currentTabId);
 	$inspect('OPTS', options);
 
 	async function getCurrentTab() {
@@ -18,23 +26,37 @@
 
 	$effect(() => {
 		async function getInitialData() {
-			const [ct, data] = await Promise.all([getCurrentTab(), chrome.storage.local.get('options')]);
+			const [ct, opts, ctid] = await Promise.all([
+				getCurrentTab(),
+				chrome.storage.local.get('options'),
+				chrome.storage.local.get('currentTabId')
+			]);
 			const tabId = ct?.id || null;
 			currentUrl = ct?.url || '';
-			options = { ...options, ...data.options, popupTabId: tabId };
+			currentTabId = ctid?.currentTabId || null;
+			options = { ...options, ...opts.options, popupTabId: tabId };
 		}
 
 		getInitialData().catch((e) => console.error(e));
 	});
 
-	function onchange(e: Event) {
+	function onToggle(e: Event) {
 		const target = e.target as HTMLInputElement;
 		const checked = target.checked;
 		if (checked) {
 			options = { ...options, allowedURL: currentUrl };
+			currentTabId = options.popupTabId;
 		} else {
 			options = { ...options, allowedURL: '' };
+			currentTabId = null;
 		}
+		chrome.storage.local.set({ options });
+	}
+
+	function onPollChange(e: Event) {
+		const target = e.target as HTMLInputElement;
+		const value = parseInt(target.value);
+		options.pollingInterval = value;
 		chrome.storage.local.set({ options });
 	}
 </script>
@@ -49,8 +71,29 @@
 					? 'Disable clipboard reader'
 					: 'Enable clipboard reader (will clear the clipboard)'}</span
 			>
-			<input type="checkbox" class="toggle toggle-primary" {onchange} checked={isClipEnabled} />
+			<input
+				type="checkbox"
+				class="toggle toggle-primary"
+				onchange={onToggle}
+				checked={isClipEnabled}
+			/>
 		</label>
+
+		<h4>Polling interval: {options.pollingInterval / 1000}s</h4>
+		<input
+			type="range"
+			min={minRange}
+			max={maxRange}
+			value={options.pollingInterval}
+			onchange={onPollChange}
+			class="range range-primary"
+			step={minRange}
+		/>
+
+		<div class="flex w-full justify-between px-2 text-xs">
+			<span>0.1</span>
+			<span>3</span>
+		</div>
 	{/if}
 </main>
 
