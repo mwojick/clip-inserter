@@ -3,19 +3,17 @@
 	const maxRange = 3000;
 
 	let currentUrl: string = $state('');
-	let currentTabId: number | null = $state(null);
+	let allowedTabId: number | null = $state(null);
 	let options: { popupTabId: number | null; allowedURL: string; pollingInterval: number } = $state({
 		popupTabId: null,
 		allowedURL: '',
 		pollingInterval: 500
 	});
 
-	let isClipEnabled = $derived(
-		options.allowedURL === currentUrl && options.popupTabId === currentTabId
-	);
+	let isClipEnabled = $derived(allowedTabId && allowedTabId === options.popupTabId);
 
 	$inspect('currentUrl', currentUrl);
-	$inspect('currentTabId', currentTabId);
+	$inspect('allowedTabId', allowedTabId);
 	$inspect('OPTS', options);
 
 	async function getCurrentTab() {
@@ -26,14 +24,14 @@
 
 	$effect(() => {
 		async function getInitialData() {
-			const [ct, opts, ctid] = await Promise.all([
+			const [ct, atid, opts] = await Promise.all([
 				getCurrentTab(),
-				chrome.storage.local.get('options'),
-				chrome.storage.local.get('currentTabId')
+				chrome.storage.local.get('allowedTabId'),
+				chrome.storage.local.get('options')
 			]);
 			const tabId = ct?.id || null;
 			currentUrl = ct?.url || '';
-			currentTabId = ctid?.currentTabId || null;
+			allowedTabId = atid?.allowedTabId || null;
 			options = { ...options, ...opts.options, popupTabId: tabId };
 		}
 
@@ -45,10 +43,10 @@
 		const checked = target.checked;
 		if (checked) {
 			options = { ...options, allowedURL: currentUrl };
-			currentTabId = options.popupTabId;
+			allowedTabId = options.popupTabId;
 		} else {
 			options = { ...options, allowedURL: '' };
-			currentTabId = null;
+			allowedTabId = null;
 		}
 		chrome.storage.local.set({ options });
 	}
@@ -67,9 +65,7 @@
 
 		<label class="label cursor-pointer">
 			<span class="label-text"
-				>{isClipEnabled
-					? 'Disable clipboard reader'
-					: 'Enable clipboard reader (will clear the clipboard)'}</span
+				>{isClipEnabled ? 'Clipboard reader enabled' : 'Clipboard reader disabled'}</span
 			>
 			<input
 				type="checkbox"
