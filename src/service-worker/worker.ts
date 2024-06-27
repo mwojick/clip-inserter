@@ -4,6 +4,30 @@ import { readFromClipboard } from './read-clipboard';
 
 let currentTabId: number | null = null;
 
+async function getCurrentTabId() {
+	let tabId = currentTabId;
+	if (tabId) {
+		return tabId;
+	}
+	try {
+		// need to fetch from storage in case the sw goes inactive (30 sec timeout)
+		const { currentTabId } = await chrome.storage.local.get('currentTabId');
+		tabId = currentTabId;
+	} catch (error) {
+		console.error(error);
+	}
+	return tabId;
+}
+
+async function setCurrentTabId(tabId: number | null) {
+	try {
+		currentTabId = tabId;
+		await chrome.storage.local.set({ currentTabId });
+	} catch (error) {
+		console.error(error);
+	}
+}
+
 chrome.runtime.onMessage.addListener(handleOffscreenMessage);
 
 async function handleOffscreenMessage({ target, type, data }: Request<string>) {
@@ -14,9 +38,10 @@ async function handleOffscreenMessage({ target, type, data }: Request<string>) {
 		console.warn(`Unexpected message type received: '${type}'.`);
 		return;
 	}
-	if (currentTabId) {
+	const curTabId = await getCurrentTabId();
+	if (curTabId) {
 		try {
-			await chrome.tabs.sendMessage(currentTabId, {
+			await chrome.tabs.sendMessage(curTabId, {
 				target: TARGET.CONTENT_SCRIPT,
 				type: TYPE.INSERT_TEXT,
 				data
@@ -34,7 +59,7 @@ async function setupContentMessage(TARG: typeof TARGET, TYP: typeof TYPE) {
 	try {
 		await navigator.clipboard.writeText('');
 	} catch (error) {
-		console.error(error);
+		console.warn(error);
 	}
 
 	chrome.runtime.onMessage.addListener(handleWorkerMessage);
@@ -58,26 +83,27 @@ async function setupContentMessage(TARG: typeof TARGET, TYP: typeof TYPE) {
 
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 	if (changeInfo.status == 'complete' && tab.active && tab.url === 'http://localhost:5174/') {
-		if (currentTabId !== tabId) {
+		const curTabId = await getCurrentTabId();
+		if (curTabId !== tabId) {
 			// clean up old tab when creating a new tab with same url
-			if (currentTabId) {
+			if (curTabId) {
 				try {
 					await Promise.all([
-						chrome.tabs.sendMessage(currentTabId, {
+						chrome.tabs.sendMessage(curTabId, {
 							target: TARGET.CONTENT_SCRIPT,
 							type: TYPE.REMOVE_LISTENER
 						}),
 						chrome.action.setBadgeText({
-							tabId: currentTabId,
+							tabId: curTabId,
 							text: ''
 						})
 					]);
 				} catch (error) {
-					console.error(error);
+					console.warn(error);
 				}
 			}
 
-			currentTabId = tabId;
+			await setCurrentTabId(tabId);
 
 			try {
 				await chrome.scripting.executeScript({
@@ -102,15 +128,16 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 
 chrome.webNavigation.onBeforeNavigate.addListener(async ({ tabId, url }) => {
 	// clean up tab when navigating away or refreshing
-	if (currentTabId === tabId) {
+	const curTabId = await getCurrentTabId();
+	if (curTabId === tabId) {
 		try {
 			const promises = [
-				chrome.tabs.sendMessage(currentTabId, {
+				chrome.tabs.sendMessage(curTabId, {
 					target: TARGET.CONTENT_SCRIPT,
 					type: TYPE.REMOVE_LISTENER
 				}),
 				chrome.action.setBadgeText({
-					tabId: currentTabId,
+					tabId: curTabId,
 					text: ''
 				})
 			];
@@ -118,21 +145,21 @@ chrome.webNavigation.onBeforeNavigate.addListener(async ({ tabId, url }) => {
 				promises.push(chrome.offscreen.closeDocument());
 			}
 			await Promise.all(promises);
-
-			currentTabId = null;
 		} catch (error) {
-			console.error(error);
+			console.warn(error);
 		}
+		await setCurrentTabId(null).catch((e) => console.error(e));
 	}
 });
 
 chrome.tabs.onRemoved.addListener(async (tabId) => {
-	if (currentTabId === tabId) {
+	const curTabId = await getCurrentTabId();
+	if (curTabId === tabId) {
 		try {
 			await chrome.offscreen.closeDocument();
-			currentTabId = null;
 		} catch (error) {
-			console.error(error);
+			console.warn(error);
 		}
+		await setCurrentTabId(null).catch((e) => console.error(e));
 	}
 });
