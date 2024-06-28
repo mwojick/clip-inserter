@@ -69,43 +69,57 @@ function tabCleanups(tabId: number) {
 	];
 }
 
+function closeDoc() {
+	return chrome.offscreen.closeDocument();
+}
+
+async function enableClipboardReader(tabId: number, allowedTabId: number | null) {
+	const options = await getOptions();
+
+	// clean up old tab when enabling on a new tab
+	if (allowedTabId) {
+		try {
+			await Promise.all(tabCleanups(allowedTabId));
+		} catch (error) {
+			console.warn(error);
+		}
+	}
+
+	await setAllowedTabId(tabId);
+	await chrome.storage.local.set({ options: { ...options, popupTabId: tabId } });
+
+	try {
+		await chrome.scripting.executeScript({
+			target: { tabId },
+			func: setupContentMessage,
+			args: [TARGET, TYPE]
+		});
+		await readFromClipboard(500);
+		await Promise.all([
+			chrome.action.setBadgeBackgroundColor({ tabId, color: '#98a6f7' }),
+			chrome.action.setBadgeText({
+				tabId,
+				text: 'ON'
+			})
+		]);
+	} catch (error) {
+		console.error(error);
+	}
+}
+
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-	if (changeInfo.status == 'complete' && tab.active && tab.url === 'http://localhost:5174/') {
-		const allowedTabId = await getAllowedTabId();
-		if (allowedTabId !== tabId) {
-			// clean up old tab when creating a new tab with same url
-			if (allowedTabId) {
-				try {
-					await Promise.all(tabCleanups(allowedTabId));
-				} catch (error) {
-					console.warn(error);
-				}
-			}
-
-			await setAllowedTabId(tabId);
-
-			try {
-				await chrome.scripting.executeScript({
-					target: { tabId },
-					func: setupContentMessage,
-					args: [TARGET, TYPE]
-				});
-				await readFromClipboard(500);
-				await Promise.all([
-					chrome.action.setBadgeBackgroundColor({ tabId, color: '#98a6f7' }),
-					chrome.action.setBadgeText({
-						tabId,
-						text: 'ON'
-					})
-				]);
-			} catch (error) {
-				console.error(error);
-			}
+	if (changeInfo.status == 'complete' && tab.active) {
+		const [allowedTabId, { allowedURL }] = await Promise.all([getAllowedTabId(), getOptions()]);
+		if (tab.url === allowedURL && allowedTabId !== tabId) {
+			enableClipboardReader(tabId, allowedTabId);
 		}
 	}
 });
 
-chrome.webNavigation.onBeforeNavigate.addListener(async ({ tabId, url }) => {
+chrome.webNavigation.onBeforeNavigate.addListener(async ({ tabId, url, frameType }) => {
+	if (frameType !== 'outermost_frame') {
+		return;
+	}
 	// clean up tab when navigating away or refreshing
 	const allowedTabId = await getAllowedTabId();
 	if (allowedTabId === tabId) {
@@ -113,7 +127,7 @@ chrome.webNavigation.onBeforeNavigate.addListener(async ({ tabId, url }) => {
 		try {
 			const promises = tabCleanups(allowedTabId);
 			if (url !== allowedURL) {
-				promises.push(chrome.offscreen.closeDocument());
+				promises.push(closeDoc());
 			}
 			await Promise.all(promises);
 		} catch (error) {
@@ -127,7 +141,7 @@ chrome.tabs.onRemoved.addListener(async (tabId) => {
 	const allowedTabId = await getAllowedTabId();
 	if (allowedTabId === tabId) {
 		try {
-			await chrome.offscreen.closeDocument();
+			await closeDoc();
 		} catch (error) {
 			console.warn(error);
 		}
@@ -136,9 +150,23 @@ chrome.tabs.onRemoved.addListener(async (tabId) => {
 });
 
 // Watch for changes to the user's options & apply them
-chrome.storage.onChanged.addListener((changes, area) => {
+chrome.storage.onChanged.addListener(async (changes, area) => {
 	const newOpts = changes.options?.newValue;
 	if (area === 'local' && newOpts) {
-		console.log('newOpts:', newOpts);
+		const oldOpts = changes.options?.oldValue;
+		const { allowedURL, popupTabId } = newOpts;
+
+		const allowedTabId = await getAllowedTabId();
+		if (!allowedURL && allowedTabId) {
+			// disable clipboard reader
+			try {
+				await Promise.all([...tabCleanups(allowedTabId), closeDoc()]);
+				await setAllowedTabId(null).catch((e) => console.error(e));
+			} catch (error) {
+				console.warn(error);
+			}
+		} else if (allowedTabId !== popupTabId || oldOpts.allowedURL !== allowedURL) {
+			enableClipboardReader(popupTabId, allowedTabId);
+		}
 	}
 });

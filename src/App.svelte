@@ -12,10 +12,6 @@
 
 	let isClipEnabled = $derived(allowedTabId && allowedTabId === options.popupTabId);
 
-	$inspect('currentUrl', currentUrl);
-	$inspect('allowedTabId', allowedTabId);
-	$inspect('OPTS', options);
-
 	async function getCurrentTab() {
 		let queryOptions = { active: true, lastFocusedWindow: true };
 		let [tab = null] = await chrome.tabs.query(queryOptions);
@@ -38,10 +34,16 @@
 		getInitialData().catch((e) => console.error(e));
 	});
 
-	function onToggle(e: Event) {
+	async function onToggle(e: Event) {
 		const target = e.target as HTMLInputElement;
 		const checked = target.checked;
 		if (checked) {
+			try {
+				await navigator.clipboard.writeText('');
+			} catch (error) {
+				console.warn(error);
+			}
+
 			options = { ...options, allowedURL: currentUrl };
 			allowedTabId = options.popupTabId;
 		} else {
@@ -61,8 +63,6 @@
 
 <main>
 	{#if currentUrl}
-		<div class="text-2xl font-bold underline">{currentUrl}</div>
-
 		<label class="label cursor-pointer">
 			<span class="label-text"
 				>{isClipEnabled ? 'Clipboard reader enabled' : 'Clipboard reader disabled'}</span
@@ -74,6 +74,15 @@
 				checked={isClipEnabled}
 			/>
 		</label>
+
+		{#if options.allowedURL}
+			<div>
+				Currently allowed on:
+				<a href={options.allowedURL} target="_blank" rel="noreferrer">
+					{options.allowedURL}
+				</a>
+			</div>
+		{/if}
 
 		<h4>Polling interval: {options.pollingInterval / 1000}s</h4>
 		<input
