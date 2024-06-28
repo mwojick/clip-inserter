@@ -4,10 +4,16 @@
 
 	let currentUrl: string = $state('');
 	let allowedTabId: number | null = $state(null);
-	let options: { popupTabId: number | null; allowedURL: string; pollingInterval: number } = $state({
+	let options: {
+		popupTabId: number | null;
+		allowedURL: string;
+		pollingInterval: number;
+		changingInterval: boolean;
+	} = $state({
 		popupTabId: null,
 		allowedURL: '',
-		pollingInterval: 500
+		pollingInterval: 500,
+		changingInterval: false
 	});
 
 	let isClipEnabled = $derived(allowedTabId && allowedTabId === options.popupTabId);
@@ -44,10 +50,10 @@
 				console.warn(error);
 			}
 
-			options = { ...options, allowedURL: currentUrl };
+			options = { ...options, allowedURL: currentUrl, changingInterval: false };
 			allowedTabId = options.popupTabId;
 		} else {
-			options = { ...options, allowedURL: '' };
+			options = { ...options, allowedURL: '', changingInterval: false };
 			allowedTabId = null;
 		}
 		chrome.storage.local.set({ options });
@@ -57,6 +63,7 @@
 		const target = e.target as HTMLInputElement;
 		const value = parseInt(target.value);
 		options.pollingInterval = value;
+		options.changingInterval = true;
 		chrome.storage.local.set({ options });
 	}
 </script>

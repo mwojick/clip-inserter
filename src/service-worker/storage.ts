@@ -29,7 +29,7 @@ export async function setAllowedTabId(tabId: number | null) {
 export async function getOptions() {
 	try {
 		const { options } = await chrome.storage.local.get('options');
-		return options;
+		return options || {};
 	} catch (error) {
 		console.error(error);
 		return {};

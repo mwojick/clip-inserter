@@ -153,8 +153,14 @@ chrome.tabs.onRemoved.addListener(async (tabId) => {
 chrome.storage.onChanged.addListener(async (changes, area) => {
 	const newOpts = changes.options?.newValue;
 	if (area === 'local' && newOpts) {
-		const oldOpts = changes.options?.oldValue;
-		const { allowedURL, popupTabId } = newOpts;
+		const oldOpts = changes.options?.oldValue || {};
+		const { allowedURL, popupTabId, changingInterval, pollingInterval } = newOpts;
+
+		if (changingInterval) {
+			console.log('pollingInterval:', pollingInterval);
+
+			return;
+		}
 
 		const allowedTabId = await getAllowedTabId();
 		if (!allowedURL && allowedTabId) {
