@@ -66,7 +66,9 @@
 </script>
 
 <main>
-	{#if currentUrl}
+	{#if currentUrl.startsWith('chrome://')}
+		<div class="text-base">Disabled on chrome:// URLs</div>
+	{:else if currentUrl}
 		<label class="label cursor-pointer">
 			<span class="label-text"
 				>{isClipEnabled ? 'Clipboard reader enabled' : 'Clipboard reader disabled'}</span
@@ -78,15 +80,6 @@
 				checked={isClipEnabled}
 			/>
 		</label>
-
-		{#if options.allowedURL}
-			<div>
-				Allowed on:
-				<a href={options.allowedURL} target="_blank" rel="noreferrer">
-					{options.allowedURL}
-				</a>
-			</div>
-		{/if}
 
 		<h4>Polling rate: {options.pollingRate / 1000}s</h4>
 		<input
@@ -103,8 +96,25 @@
 			<span>0.1</span>
 			<span>3</span>
 		</div>
+
+		{#if options.allowedURL}
+			<div>
+				Allowed on:
+				<a href={options.allowedURL} target="_blank" rel="noreferrer">
+					{options.allowedURL}
+				</a>
+			</div>
+		{/if}
 	{/if}
 </main>
 
 <style>
+	main {
+		min-width: 300px;
+		max-width: 800px;
+		word-wrap: break-word;
+		margin: 0 auto;
+		padding: 2rem;
+		text-align: center;
+	}
 </style>

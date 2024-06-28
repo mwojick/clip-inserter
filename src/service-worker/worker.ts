@@ -30,11 +30,17 @@ async function handleOffscreenMessage({ target, type, data }: Request<string>) {
 }
 
 // this runs within the context of the page
-async function setupContentMessage(_TARGET: typeof TARGET, _TYPE: typeof TYPE) {
-	try {
-		await navigator.clipboard.writeText('');
-	} catch (error) {
-		console.warn(error);
+async function setupContentMessage(
+	_TARGET: typeof TARGET,
+	_TYPE: typeof TYPE,
+	clearClipboard: boolean
+) {
+	if (clearClipboard) {
+		try {
+			await navigator.clipboard.writeText('');
+		} catch (error) {
+			console.warn(error);
+		}
 	}
 
 	chrome.runtime.onMessage.addListener(handleWorkerMessage);
@@ -73,7 +79,11 @@ function closeDoc() {
 	return chrome.offscreen.closeDocument();
 }
 
-async function enableClipboardReader(tabId: number, allowedTabId: number | null) {
+async function enableClipboardReader(
+	tabId: number,
+	allowedTabId: number | null,
+	clearClipboard = true
+) {
 	const options = await getOptions();
 
 	// clean up old tab when enabling on a new tab
@@ -92,7 +102,7 @@ async function enableClipboardReader(tabId: number, allowedTabId: number | null)
 		await chrome.scripting.executeScript({
 			target: { tabId },
 			func: setupContentMessage,
-			args: [TARGET, TYPE]
+			args: [TARGET, TYPE, clearClipboard]
 		});
 		await readFromClipboard({ pollingRate: options.pollingRate });
 		await Promise.all([
@@ -173,7 +183,7 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
 				console.warn(error);
 			}
 		} else if (allowedTabId !== popupTabId || oldOpts.allowedURL !== allowedURL) {
-			enableClipboardReader(popupTabId!, allowedTabId);
+			enableClipboardReader(popupTabId!, allowedTabId, false);
 		}
 	}
 });
