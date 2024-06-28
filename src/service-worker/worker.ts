@@ -96,7 +96,6 @@ async function enableClipboardReader(
 	}
 
 	await setAllowedTabId(tabId);
-	await chrome.storage.local.set({ options: { ...options, popupTabId: tabId } });
 
 	try {
 		await chrome.scripting.executeScript({

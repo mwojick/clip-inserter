@@ -3,6 +3,7 @@
 	import { INIT_RATE } from '$lib/constants';
 	const minRange = 100;
 	const maxRange = 3000;
+	const chromeURL = 'chrome://';
 
 	let currentUrl: string = $state('');
 	let allowedTabId: number | null = $state(null);
@@ -66,8 +67,8 @@
 </script>
 
 <main>
-	{#if currentUrl.startsWith('chrome://')}
-		<div class="text-base">Disabled on chrome:// URLs</div>
+	{#if currentUrl.startsWith(chromeURL)}
+		<div class="text-base">Disabled on {chromeURL} URLs</div>
 	{:else if currentUrl}
 		<label class="label cursor-pointer">
 			<span class="label-text"
