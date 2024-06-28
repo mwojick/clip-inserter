@@ -1,15 +1,11 @@
 <script lang="ts">
+	import type { Options } from '$lib/types';
 	const minRange = 100;
 	const maxRange = 3000;
 
 	let currentUrl: string = $state('');
 	let allowedTabId: number | null = $state(null);
-	let options: {
-		popupTabId: number | null;
-		allowedURL: string;
-		pollingInterval: number;
-		changingInterval: boolean;
-	} = $state({
+	let options: Options = $state({
 		popupTabId: null,
 		allowedURL: '',
 		pollingInterval: 500,

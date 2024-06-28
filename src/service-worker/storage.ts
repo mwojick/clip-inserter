@@ -1,3 +1,4 @@
+import type { Options } from '$lib/types';
 let allowedTabId: number | null = null;
 
 export async function getAllowedTabId() {
@@ -26,10 +27,10 @@ export async function setAllowedTabId(tabId: number | null) {
 	}
 }
 
-export async function getOptions() {
+export async function getOptions(): Promise<Options | Record<string, never>> {
 	try {
 		const { options } = await chrome.storage.local.get('options');
-		return options || {};
+		return (options as Options) || {};
 	} catch (error) {
 		console.error(error);
 		return {};

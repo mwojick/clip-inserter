@@ -3,3 +3,10 @@ export type Request<T> = {
 	type: string;
 	target: string;
 };
+
+export type Options = {
+	popupTabId: number | null;
+	allowedURL: string;
+	pollingInterval: number;
+	changingInterval: boolean;
+};

@@ -94,7 +94,7 @@ async function enableClipboardReader(tabId: number, allowedTabId: number | null)
 			func: setupContentMessage,
 			args: [TARGET, TYPE]
 		});
-		await readFromClipboard(500);
+		await readFromClipboard(options.pollingInterval || 500);
 		await Promise.all([
 			chrome.action.setBadgeBackgroundColor({ tabId, color: '#98a6f7' }),
 			chrome.action.setBadgeText({
