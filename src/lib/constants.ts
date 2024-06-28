@@ -10,3 +10,5 @@ export const TYPE = {
 	INSERT_TEXT: 'insert-text',
 	REMOVE_LISTENER: 'remove-listener'
 };
+
+export const INIT_RATE = 300;

@@ -1,4 +1,4 @@
-import type { Request } from '$lib/types';
+import type { Options, Request } from '$lib/types';
 import { TARGET, TYPE } from '$lib/constants';
 import { readFromClipboard } from './read-clipboard';
 import { getAllowedTabId, setAllowedTabId, getOptions } from './storage';
@@ -94,7 +94,7 @@ async function enableClipboardReader(tabId: number, allowedTabId: number | null)
 			func: setupContentMessage,
 			args: [TARGET, TYPE]
 		});
-		await readFromClipboard(options.pollingInterval || 500);
+		await readFromClipboard({ pollingRate: options.pollingRate });
 		await Promise.all([
 			chrome.action.setBadgeBackgroundColor({ tabId, color: '#98a6f7' }),
 			chrome.action.setBadgeText({
@@ -151,18 +151,19 @@ chrome.tabs.onRemoved.addListener(async (tabId) => {
 
 // Watch for changes to the user's options & apply them
 chrome.storage.onChanged.addListener(async (changes, area) => {
-	const newOpts = changes.options?.newValue;
+	const newOpts: Options = changes.options?.newValue;
 	if (area === 'local' && newOpts) {
-		const oldOpts = changes.options?.oldValue || {};
-		const { allowedURL, popupTabId, changingInterval, pollingInterval } = newOpts;
+		const oldOpts: Options = changes.options?.oldValue || {};
+		const { allowedURL, popupTabId, changingRate, pollingRate } = newOpts;
 
-		if (changingInterval) {
-			console.log('pollingInterval:', pollingInterval);
-
+		const allowedTabId = await getAllowedTabId();
+		if (changingRate) {
+			if (allowedTabId) {
+				await readFromClipboard({ pollingRate, clearPrevText: false });
+			}
 			return;
 		}
 
-		const allowedTabId = await getAllowedTabId();
 		if (!allowedURL && allowedTabId) {
 			// disable clipboard reader
 			try {
@@ -172,7 +173,7 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
 				console.warn(error);
 			}
 		} else if (allowedTabId !== popupTabId || oldOpts.allowedURL !== allowedURL) {
-			enableClipboardReader(popupTabId, allowedTabId);
+			enableClipboardReader(popupTabId!, allowedTabId);
 		}
 	}
 });

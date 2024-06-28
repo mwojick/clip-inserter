@@ -3,14 +3,18 @@ import { TARGET, TYPE } from '$lib/constants';
 
 chrome.runtime.onMessage.addListener(handleWorkerMessage);
 
-function handleWorkerMessage({ target, type, data }: Request<number>) {
+function handleWorkerMessage({
+	target,
+	type,
+	data
+}: Request<{ pollingRate: number; clearPrevText: boolean }>) {
 	// Return early if this message isn't meant for the offscreen document.
 	if (target !== TARGET.OFFSCREEN_DOC) {
 		return;
 	}
 
 	if (type === TYPE.READ_DATA_FROM_CLIPBOARD) {
-		handleClipboardRead(data);
+		handleClipboardRead(data.pollingRate, data.clearPrevText);
 	} else {
 		console.warn(`Unexpected message type received: '${type}'.`);
 	}
@@ -37,14 +41,16 @@ let previousText = '';
 // The `navigator.clipboard` API requires that the window is focused,
 // but offscreen documents cannot be focused.
 // As such, we have to fall back to `document.execCommand()`.
-function handleClipboardRead(pollingRate = 1000) {
+function handleClipboardRead(pollingRate: number, clearPrevText: boolean) {
 	if (typeof pollingRate !== 'number') {
 		throw new TypeError(`Value provided must be a 'number', got '${typeof pollingRate}'.`);
 	}
 
+	if (clearPrevText) {
+		previousText = '';
+	}
 	if (interval) {
 		clearInterval(interval);
-		previousText = '';
 	}
 
 	interval = setInterval(() => {

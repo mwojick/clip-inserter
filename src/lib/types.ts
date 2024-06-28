@@ -7,6 +7,6 @@ export type Request<T> = {
 export type Options = {
 	popupTabId: number | null;
 	allowedURL: string;
-	pollingInterval: number;
-	changingInterval: boolean;
+	pollingRate: number;
+	changingRate: boolean;
 };

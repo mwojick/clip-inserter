@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Options } from '$lib/types';
+	import { INIT_RATE } from '$lib/constants';
 	const minRange = 100;
 	const maxRange = 3000;
 
@@ -8,8 +9,8 @@
 	let options: Options = $state({
 		popupTabId: null,
 		allowedURL: '',
-		pollingInterval: 500,
-		changingInterval: false
+		pollingRate: INIT_RATE,
+		changingRate: false
 	});
 
 	let isClipEnabled = $derived(allowedTabId && allowedTabId === options.popupTabId);
@@ -46,10 +47,10 @@
 				console.warn(error);
 			}
 
-			options = { ...options, allowedURL: currentUrl, changingInterval: false };
+			options = { ...options, allowedURL: currentUrl, changingRate: false };
 			allowedTabId = options.popupTabId;
 		} else {
-			options = { ...options, allowedURL: '', changingInterval: false };
+			options = { ...options, allowedURL: '', changingRate: false };
 			allowedTabId = null;
 		}
 		chrome.storage.local.set({ options });
@@ -58,8 +59,8 @@
 	function onPollChange(e: Event) {
 		const target = e.target as HTMLInputElement;
 		const value = parseInt(target.value);
-		options.pollingInterval = value;
-		options.changingInterval = true;
+		options.pollingRate = value;
+		options.changingRate = true;
 		chrome.storage.local.set({ options });
 	}
 </script>
@@ -80,19 +81,19 @@
 
 		{#if options.allowedURL}
 			<div>
-				Currently allowed on:
+				Allowed on:
 				<a href={options.allowedURL} target="_blank" rel="noreferrer">
 					{options.allowedURL}
 				</a>
 			</div>
 		{/if}
 
-		<h4>Polling interval: {options.pollingInterval / 1000}s</h4>
+		<h4>Polling rate: {options.pollingRate / 1000}s</h4>
 		<input
 			type="range"
 			min={minRange}
 			max={maxRange}
-			value={options.pollingInterval}
+			value={options.pollingRate}
 			onchange={onPollChange}
 			class="range range-primary"
 			step={minRange}
