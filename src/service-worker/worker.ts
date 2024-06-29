@@ -1,5 +1,5 @@
 import type { Options, Request } from '$lib/types';
-import { TARGET, TYPE } from '$lib/constants';
+import { TARGET, TYPE, INIT_ELEMENT, INIT_SELECTOR } from '$lib/constants';
 import { readFromClipboard } from './read-clipboard';
 import { getAllowedTabId, setAllowedTabId, getOptions } from './storage';
 
@@ -33,7 +33,9 @@ async function handleOffscreenMessage({ target, type, data }: Request<string>) {
 async function setupContentMessage(
 	_TARGET: typeof TARGET,
 	_TYPE: typeof TYPE,
-	clearClipboard: boolean
+	clearClipboard: boolean,
+	element: string,
+	selector: string
 ) {
 	if (clearClipboard) {
 		try {
@@ -51,15 +53,25 @@ async function setupContentMessage(
 		}
 
 		if (type === _TYPE.INSERT_TEXT) {
-			const pasteTarget = document.createElement('p');
+			const pasteTarget = document.createElement(element);
 			pasteTarget.textContent = data;
-			document.querySelector('body')?.appendChild(pasteTarget);
+			document.querySelector(selector)?.appendChild(pasteTarget);
 		} else if (type === _TYPE.REMOVE_LISTENER) {
 			chrome.runtime.onMessage.removeListener(handleWorkerMessage);
 		} else {
 			console.warn(`Unexpected message type received: '${type}'.`);
 		}
 	}
+}
+
+function badgeEnablers(tabId: number) {
+	return [
+		chrome.action.setBadgeBackgroundColor({ tabId, color: '#98a6f7' }),
+		chrome.action.setBadgeText({
+			tabId,
+			text: 'ON'
+		})
+	];
 }
 
 function tabCleanups(tabId: number) {
@@ -84,7 +96,7 @@ async function enableClipboardReader(
 	allowedTabId: number | null,
 	clearClipboard = true
 ) {
-	const options = await getOptions();
+	const { pollingRate, element, selector } = await getOptions();
 
 	// clean up old tab when enabling on a new tab
 	if (allowedTabId) {
@@ -101,16 +113,10 @@ async function enableClipboardReader(
 		await chrome.scripting.executeScript({
 			target: { tabId },
 			func: setupContentMessage,
-			args: [TARGET, TYPE, clearClipboard]
+			args: [TARGET, TYPE, clearClipboard, element || INIT_ELEMENT, selector || INIT_SELECTOR]
 		});
-		await readFromClipboard({ pollingRate: options.pollingRate });
-		await Promise.all([
-			chrome.action.setBadgeBackgroundColor({ tabId, color: '#98a6f7' }),
-			chrome.action.setBadgeText({
-				tabId,
-				text: 'ON'
-			})
-		]);
+		await readFromClipboard({ pollingRate });
+		await Promise.all(badgeEnablers(tabId));
 	} catch (error) {
 		console.error(error);
 	}
@@ -163,12 +169,30 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
 	const newOpts: Options = changes.options?.newValue;
 	if (area === 'local' && newOpts) {
 		const oldOpts: Options = changes.options?.oldValue || {};
-		const { allowedURL, popupTabId, changingRate, pollingRate } = newOpts;
+		const { allowedURL, popupTabId, changingRate, pollingRate, changingEls, element, selector } =
+			newOpts;
 
 		const allowedTabId = await getAllowedTabId();
 		if (changingRate) {
 			if (allowedTabId) {
 				await readFromClipboard({ pollingRate, clearPrevText: false });
+			}
+			return;
+		}
+
+		if (changingEls) {
+			if (allowedTabId) {
+				try {
+					await Promise.all(tabCleanups(allowedTabId));
+					await chrome.scripting.executeScript({
+						target: { tabId: allowedTabId },
+						func: setupContentMessage,
+						args: [TARGET, TYPE, false, element || INIT_ELEMENT, selector || INIT_SELECTOR]
+					});
+					await Promise.all(badgeEnablers(allowedTabId));
+				} catch (error) {
+					console.warn(error);
+				}
 			}
 			return;
 		}
@@ -182,6 +206,9 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
 				console.warn(error);
 			}
 		} else if (allowedTabId !== popupTabId || oldOpts.allowedURL !== allowedURL) {
+			// enable clipboard reader
+			// popupTabId should always exist here. Also, don't clearClipboard: it's done on the
+			// popup instead because it doesn't work here (document isn't in focus while using popup).
 			enableClipboardReader(popupTabId!, allowedTabId, false);
 		}
 	}
