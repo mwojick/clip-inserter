@@ -3,6 +3,10 @@
 	"name": "CRXJS Svelte Vite Example",
 	"version": "1.0.0",
 	"action": { "default_popup": "index.html" },
+	"options_ui": {
+		"page": "index.html",
+		"open_in_tab": true
+	},
 	"permissions": [
 		"tabs",
 		"activeTab",
