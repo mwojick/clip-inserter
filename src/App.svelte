@@ -1,16 +1,20 @@
 <script lang="ts">
 	import type { Options } from '$lib/types';
-	import { INIT_RATE } from '$lib/constants';
+	import { INIT_RATE, INIT_ELEMENT, INIT_SELECTOR } from '$lib/constants';
 	const minRange = 100;
 	const maxRange = 3000;
 
+	let showSuccess: boolean = $state(false);
 	let currentUrl: string = $state('');
 	let allowedTabId: number | null = $state(null);
 	let options: Options = $state({
 		popupTabId: null,
 		allowedURL: '',
 		pollingRate: INIT_RATE,
-		changingRate: false
+		element: '',
+		selector: '',
+		changingRate: false,
+		changingEls: false
 	});
 
 	let isClipEnabled = $derived(allowedTabId && allowedTabId === options.popupTabId);
@@ -47,10 +51,10 @@
 				console.warn(error);
 			}
 
-			options = { ...options, allowedURL: currentUrl, changingRate: false };
+			options = { ...options, allowedURL: currentUrl, changingRate: false, changingEls: false };
 			allowedTabId = options.popupTabId;
 		} else {
-			options = { ...options, allowedURL: '', changingRate: false };
+			options = { ...options, allowedURL: '', changingRate: false, changingEls: false };
 			allowedTabId = null;
 		}
 		chrome.storage.local.set({ options });
@@ -61,18 +65,32 @@
 		const value = parseInt(target.value);
 		options.pollingRate = value;
 		options.changingRate = true;
+		options.changingEls = false;
 		chrome.storage.local.set({ options });
 	}
 
-	function onsubmit(e: Event) {
+	async function onsubmit(e: Event) {
 		e.preventDefault();
 		const formData = new FormData(e.target as HTMLFormElement);
 		const { element, selector } = Object.fromEntries(formData) as {
 			element: string;
 			selector: string;
 		};
-		console.log('element:', element);
-		console.log('selector:', selector);
+
+		if (element !== options.element || selector !== options.selector) {
+			options = {
+				...options,
+				element: element,
+				selector: selector,
+				changingRate: false,
+				changingEls: true
+			};
+			await chrome.storage.local.set({ options });
+			showSuccess = true;
+			setTimeout(() => {
+				showSuccess = false;
+			}, 600);
+		}
 	}
 </script>
 
@@ -111,28 +129,36 @@
 		</div>
 
 		<form {onsubmit}>
-			<label class="input input-bordered input-primary mt-4 flex items-center gap-2">
+			<label
+				class={`input input-bordered input-primary ${showSuccess && 'input-accent'} mt-4 flex items-center gap-2`}
+			>
 				Element
 				<input
 					name="element"
 					type="text"
 					class="grow"
-					placeholder="p"
-					title="The HTML element used to wrap the text when inserting into the page (called with document.createElement)."
+					placeholder={INIT_ELEMENT}
+					value={options.element}
+					autocomplete="off"
+					title="HTML element used to wrap the text when inserting into the page (called with document.createElement)."
 				/>
 			</label>
 
-			<label class="input input-bordered input-primary mt-2 flex items-center gap-2">
+			<label
+				class={`input input-bordered input-primary ${showSuccess && 'input-accent'} mt-2 flex items-center gap-2`}
+			>
 				Selector
 				<input
 					name="selector"
 					type="text"
 					class="grow"
-					placeholder="body"
-					title="The target queried to insert the element into the page (called with document.querySelector)."
+					placeholder={INIT_SELECTOR}
+					value={options.selector}
+					autocomplete="off"
+					title="Used to find what element on the page to insert the text into (called with document.querySelector)."
 				/>
 			</label>
-			<button class="btn btn-primary mt-2 w-32 text-xs">Update Element/Selector</button>
+			<button class="btn btn-primary mt-4 w-36 text-sm">Update Element/Selector</button>
 		</form>
 
 		{#if options.allowedURL}
@@ -153,5 +179,9 @@
 		margin: 0 auto;
 		padding: 2rem;
 		text-align: center;
+	}
+
+	label {
+		transition: border-color 0.3s;
 	}
 </style>

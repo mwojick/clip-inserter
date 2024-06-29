@@ -12,3 +12,5 @@ export const TYPE = {
 };
 
 export const INIT_RATE = 300;
+export const INIT_ELEMENT = 'p';
+export const INIT_SELECTOR = 'body';

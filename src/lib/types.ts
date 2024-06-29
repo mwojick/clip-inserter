@@ -8,5 +8,8 @@ export type Options = {
 	popupTabId: number | null;
 	allowedURL: string;
 	pollingRate: number;
+	element: string;
+	selector: string;
 	changingRate: boolean;
+	changingEls: boolean;
 };
