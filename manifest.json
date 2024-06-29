@@ -1,8 +1,14 @@
 {
 	"manifest_version": 3,
-	"name": "CRXJS Svelte Vite Example",
+	"name": "Clip Inserter",
 	"version": "1.0.0",
 	"action": { "default_popup": "index.html" },
+	"icons": {
+		"16": "src/assets/clipboard16.png",
+		"32": "src/assets/clipboard32.png",
+		"64": "src/assets/clipboard64.png",
+		"128": "src/assets/clipboard128.png"
+	},
 	"options_ui": {
 		"page": "index.html",
 		"open_in_tab": true
