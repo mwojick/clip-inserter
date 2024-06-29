@@ -66,7 +66,7 @@ async function setupContentMessage(
 
 function badgeEnablers(tabId: number) {
 	return [
-		chrome.action.setBadgeBackgroundColor({ tabId, color: '#98a6f7' }),
+		chrome.action.setBadgeBackgroundColor({ tabId, color: '#a4b1fc' }),
 		chrome.action.setBadgeText({
 			tabId,
 			text: 'ON'

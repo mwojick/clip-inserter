@@ -162,9 +162,15 @@
 		</form>
 
 		{#if options.allowedURL}
-			<div class="mt-4">
+			<div class="mt-4 overflow-hidden text-ellipsis whitespace-nowrap">
 				Allowed on:
-				<a href={options.allowedURL} target="_blank" rel="noreferrer">
+				<a
+					class="text-primary"
+					href={options.allowedURL}
+					title={options.allowedURL}
+					target="_blank"
+					rel="noreferrer"
+				>
 					{options.allowedURL}
 				</a>
 			</div>
