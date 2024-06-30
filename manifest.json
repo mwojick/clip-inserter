@@ -1,6 +1,7 @@
 {
 	"manifest_version": 3,
 	"name": "Clip Inserter",
+	"description": "An extension that takes text copied to the clipboard and inserts it into the page. Clipboard icons created by Freepik - Flaticon.",
 	"version": "1.0.0",
 	"action": { "default_popup": "index.html" },
 	"icons": {
@@ -23,7 +24,7 @@
 		"offscreen",
 		"webNavigation"
 	],
-	"host_permissions": ["http://*/", "https://*/*"],
+	"host_permissions": ["http://*/*", "https://*/*", "file://*/*"],
 	"background": {
 		"service_worker": "src/service-worker/worker.ts"
 	}

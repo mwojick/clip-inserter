@@ -97,7 +97,7 @@
 
 <main>
 	{#if currentUrl}
-		{#if currentUrl.startsWith('http')}
+		{#if currentUrl.startsWith('http') || currentUrl.startsWith('file')}
 			<label class="label cursor-pointer justify-center">
 				<span class="label-text text-base"
 					>{isClipEnabled ? 'Clipboard reader enabled' : 'Clipboard reader disabled'}</span
@@ -110,7 +110,7 @@
 				/>
 			</label>
 		{:else}
-			<div class="label-text text-base">Disabled on non-http(s) sites</div>
+			<div class="label-text text-base">Only works on http(s) or file URLs</div>
 		{/if}
 
 		<h4 class="label-text mt-4">Polling rate: {options.pollingRate / 1000}s</h4>
