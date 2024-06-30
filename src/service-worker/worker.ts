@@ -124,18 +124,21 @@ async function enableClipboardReader(
 
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 	if (changeInfo.status == 'complete' && tab.active) {
-		const [allowedTabId, { allowedURL }] = await Promise.all([getAllowedTabId(), getOptions()]);
-		if (tab.url === allowedURL && allowedTabId !== tabId) {
+		const [allowedTabId, options] = await Promise.all([getAllowedTabId(), getOptions()]);
+		if (tab.url === options.allowedURL && allowedTabId !== tabId) {
+			// needed to fix bug where popupTabId is stale when refreshing on another tab
+			// which causes toggle to not trigger a storage change.
+			await chrome.storage.local.set({ options: { ...options, popupTabId: null } });
 			enableClipboardReader(tabId, allowedTabId);
 		}
 	}
 });
 
+// clean up tab when navigating away or refreshing
 chrome.webNavigation.onBeforeNavigate.addListener(async ({ tabId, url, frameType }) => {
 	if (frameType !== 'outermost_frame') {
 		return;
 	}
-	// clean up tab when navigating away or refreshing
 	const allowedTabId = await getAllowedTabId();
 	if (allowedTabId === tabId) {
 		const { allowedURL } = await getOptions();
@@ -164,7 +167,7 @@ chrome.tabs.onRemoved.addListener(async (tabId) => {
 	}
 });
 
-// Watch for changes to the user's options & apply them
+// watch for changes to the user's options
 chrome.storage.onChanged.addListener(async (changes, area) => {
 	const newOpts: Options = changes.options?.newValue;
 	if (area === 'local' && newOpts) {
@@ -205,11 +208,10 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
 			} catch (error) {
 				console.warn(error);
 			}
-		} else if (allowedTabId !== popupTabId || oldOpts.allowedURL !== allowedURL) {
-			// enable clipboard reader
-			// popupTabId should always exist here. Also, don't clearClipboard: it's done on the
-			// popup instead because it doesn't work here (document isn't in focus while using popup).
-			enableClipboardReader(popupTabId!, allowedTabId, false);
+		} else if (popupTabId && (allowedTabId !== popupTabId || oldOpts.allowedURL !== allowedURL)) {
+			// don't clear clipboard on enable: it's done in the popup instead because
+			// it doesn't work here (document isn't in focus while using popup).
+			enableClipboardReader(popupTabId, allowedTabId, false);
 		}
 	}
 });

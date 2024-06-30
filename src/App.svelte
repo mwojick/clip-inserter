@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import type { Options } from '$lib/types';
 	import { INIT_RATE, INIT_ELEMENT, INIT_SELECTOR } from '$lib/constants';
 	const minRange = 100;
@@ -25,8 +26,8 @@
 		return tab;
 	}
 
-	$effect(() => {
-		async function getInitialData() {
+	onMount(() => {
+		async function setInitialData() {
 			const [ct, atid, opts] = await Promise.all([
 				getCurrentTab(),
 				chrome.storage.local.get('allowedTabId'),
@@ -38,7 +39,7 @@
 			options = { ...options, ...opts.options, popupTabId: tabId };
 		}
 
-		getInitialData().catch((e) => console.error(e));
+		setInitialData().catch((e) => console.error(e));
 	});
 
 	async function onToggle(e: Event) {

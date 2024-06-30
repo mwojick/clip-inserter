@@ -35,8 +35,8 @@ textEl.addEventListener('paste', (e: ClipboardEvent) => {
 let interval: NodeJS.Timeout | null = null;
 let previousText = '';
 
-// Use the offscreen document's `document` interface to write a new value to the
-// system clipboard.
+// Use the offscreen document's `document` interface to read from
+// the system clipboard.
 //
 // The `navigator.clipboard` API requires that the window is focused,
 // but offscreen documents cannot be focused.
