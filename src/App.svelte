@@ -176,6 +176,8 @@
 				</a>
 			</div>
 		{/if}
+	{:else}
+		<div class="label-text text-base">Loading...</div>
 	{/if}
 </main>
 

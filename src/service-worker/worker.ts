@@ -204,10 +204,10 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
 			// disable clipboard reader
 			try {
 				await Promise.all([...tabCleanups(allowedTabId), closeDoc()]);
-				await setAllowedTabId(null).catch((e) => console.error(e));
 			} catch (error) {
 				console.warn(error);
 			}
+			await setAllowedTabId(null).catch((e) => console.error(e));
 		} else if (popupTabId && (allowedTabId !== popupTabId || oldOpts.allowedURL !== allowedURL)) {
 			// don't clear clipboard on enable: it's done in the popup instead because
 			// it doesn't work here (document isn't in focus while using popup).
