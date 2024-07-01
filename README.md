@@ -9,7 +9,7 @@
 
 ## Functionality
 
-- Can only run on a single site/tab at a time in order to limit the access it has.
+- Only runs on a single site/tab at a time in order to limit the access it has.
 - Remembers the last site you enabled it on so that it switches on automatically when navigating back to the site.
   - To prevent it activating on its own in the background, the tab needs to be active when loading the page (i.e. it won't auto-enable on a tab that loads in the background).
 - Disabled automatically when navigating away or closing the tab/window.

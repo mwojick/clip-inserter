@@ -125,7 +125,7 @@ async function enableClipboardReader(
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 	if (changeInfo.status == 'complete' && tab.active) {
 		const [allowedTabId, options] = await Promise.all([getAllowedTabId(), getOptions()]);
-		if (tab.url === options.allowedURL && allowedTabId !== tabId) {
+		if (options.allowedURL && tab.url?.startsWith(options.allowedURL) && allowedTabId !== tabId) {
 			// needed to fix bug where popupTabId is stale when refreshing on another tab
 			// which causes toggle to not trigger a storage change.
 			await chrome.storage.local.set({ options: { ...options, popupTabId: null } });
