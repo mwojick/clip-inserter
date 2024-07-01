@@ -135,19 +135,14 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 });
 
 // clean up tab when navigating away or refreshing
-chrome.webNavigation.onBeforeNavigate.addListener(async ({ tabId, url, frameType }) => {
+chrome.webNavigation.onBeforeNavigate.addListener(async ({ tabId, frameType }) => {
 	if (frameType !== 'outermost_frame') {
 		return;
 	}
 	const allowedTabId = await getAllowedTabId();
 	if (allowedTabId === tabId) {
-		const { allowedURL } = await getOptions();
 		try {
-			const promises = tabCleanups(allowedTabId);
-			if (url !== allowedURL) {
-				promises.push(closeDoc());
-			}
-			await Promise.all(promises);
+			await Promise.all([...tabCleanups(allowedTabId), closeDoc()]);
 		} catch (error) {
 			console.warn(error);
 		}
