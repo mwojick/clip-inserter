@@ -8,10 +8,10 @@ import manifest from './manifest.json' assert { type: 'json' };
 export default defineConfig({
 	plugins: [svelte(), crx({ manifest })],
 	server: {
-		port: 5173,
+		port: 5174,
 		strictPort: true,
 		hmr: {
-			port: 5173
+			port: 5174
 		}
 	},
 	resolve: {
