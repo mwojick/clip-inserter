@@ -22,7 +22,7 @@
 
 	async function getCurrentTab() {
 		let queryOptions = { active: true, lastFocusedWindow: true };
-		let [tab = null] = await chrome.tabs.query(queryOptions);
+		let [tab = null] = await browser.tabs.query(queryOptions);
 		return tab;
 	}
 
@@ -30,8 +30,8 @@
 		async function setInitialData() {
 			const [ct, atid, opts] = await Promise.all([
 				getCurrentTab(),
-				chrome.storage.local.get('allowedTabId'),
-				chrome.storage.local.get('options')
+				browser.storage.local.get('allowedTabId'),
+				browser.storage.local.get('options')
 			]);
 			const tabId = ct?.id || null;
 			currentUrl = ct?.url || '';
@@ -58,7 +58,7 @@
 			options = { ...options, allowedURL: '', changingRate: false, changingEls: false };
 			allowedTabId = null;
 		}
-		chrome.storage.local.set({ options });
+		browser.storage.local.set({ options });
 	}
 
 	function onPollChanging(e: Event) {
@@ -70,7 +70,7 @@
 	function onPollEnd() {
 		options.changingRate = true;
 		options.changingEls = false;
-		chrome.storage.local.set({ options });
+		browser.storage.local.set({ options });
 	}
 
 	async function onsubmit(e: Event) {
@@ -89,7 +89,7 @@
 				changingRate: false,
 				changingEls: true
 			};
-			await chrome.storage.local.set({ options });
+			await browser.storage.local.set({ options });
 			showSuccess = true;
 			setTimeout(() => {
 				showSuccess = false;
