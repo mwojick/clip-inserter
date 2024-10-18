@@ -37,3 +37,10 @@
   - https://github.com/kmltml/clipboard-inserter
 
 - [Clipboard icons created by Freepik - Flaticon](https://www.flaticon.com/free-icons/clipboard) ([Link to icon used](https://www.flaticon.com/free-icon/clipboard_5480173))
+
+## Built with
+
+- [WXT](https://wxt.dev/)
+- [Svelte](https://svelte.dev/)
+- [Tailwind](https://tailwindcss.com/)
+- [Daisy UI](https://daisyui.com/)
