@@ -8,7 +8,7 @@ export async function getAllowedTabId() {
 	}
 
 	try {
-		// need to fetch from storage in case the sw goes inactive (30 sec timeout)
+		// need to fetch from storage in case the service worker goes inactive (30 sec timeout)
 		const { allowedTabId } = await browser.storage.local.get('allowedTabId');
 		tabId = allowedTabId;
 	} catch (error) {

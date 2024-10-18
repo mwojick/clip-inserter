@@ -44,7 +44,8 @@ export default defineBackground(() => {
 			});
 		}
 
-		// browser.runtime doesn't work on chrome in content scripts
+		// wxt/browser is not defined within content scripts
+		// https://github.com/wxt-dev/wxt/issues/616#issuecomment-2058972036
 		chrome.runtime.onMessage.addListener(handleWorkerMessage);
 
 		function handleWorkerMessage({ target, type, data }: Request<string>) {
