@@ -1,24 +1,28 @@
 {
 	"name": "clip-inserter",
+	"description": "Takes text copied to the clipboard and inserts it into the page. Clipboard icons created by Freepik - Flaticon.",
 	"private": true,
 	"version": "0.0.0",
 	"type": "module",
 	"scripts": {
-		"dev": "vite",
-		"build": "vite build",
-		"build:watch": "vite build --watch",
-		"preview": "vite preview",
-		"check": "svelte-check --tsconfig ./tsconfig.json && tsc -p tsconfig.node.json"
+		"dev": "wxt",
+		"dev:firefox": "wxt -b firefox",
+		"build": "wxt build",
+		"build:firefox": "wxt build -b firefox",
+		"zip": "wxt zip",
+		"zip:firefox": "wxt zip -b firefox",
+		"check": "svelte-check --tsconfig ./tsconfig.json",
+		"postinstall": "wxt prepare"
 	},
 	"devDependencies": {
-		"@crxjs/vite-plugin": "2.0.0-beta.25",
 		"@sveltejs/vite-plugin-svelte": "^3.1.1",
 		"@tsconfig/svelte": "^5.0.4",
-		"@types/chrome": "^0.0.268",
+		"@types/chrome": "^0.0.269",
 		"@types/eslint": "^8.56.0",
 		"@types/node": "^20.14.8",
 		"@typescript-eslint/eslint-plugin": "^7.0.0",
 		"@typescript-eslint/parser": "^7.0.0",
+		"@wxt-dev/module-svelte": "^1.0.1",
 		"autoprefixer": "^10.4.19",
 		"daisyui": "^4.12.10",
 		"eslint": "^8.56.0",
@@ -33,11 +37,7 @@
 		"tailwindcss": "^3.4.4",
 		"tslib": "^2.6.3",
 		"typescript": "^5.2.2",
-		"vite": "^5.3.1"
-	},
-	"pnpm": {
-		"patchedDependencies": {
-			"@crxjs/vite-plugin": "patches/@crxjs__vite-plugin.patch"
-		}
+		"vite": "^5.3.1",
+		"wxt": "^0.19.11"
 	}
 }

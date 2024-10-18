@@ -1,7 +1,7 @@
 import type { Request } from '$lib/types';
 import { TARGET, TYPE } from '$lib/constants';
 
-chrome.runtime.onMessage.addListener(handleWorkerMessage);
+browser.runtime.onMessage.addListener(handleWorkerMessage);
 
 function handleWorkerMessage({
 	target,
@@ -61,7 +61,7 @@ function handleClipboardRead(pollingRate: number, clearPrevText: boolean) {
 
 		if (newText && newText !== previousText) {
 			previousText = newText;
-			chrome.runtime.sendMessage({
+			browser.runtime.sendMessage({
 				target: TARGET.SERVICE_WORKER,
 				type: TYPE.CLIPBOARD_TEXT,
 				data: newText

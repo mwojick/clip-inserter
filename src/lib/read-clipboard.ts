@@ -1,4 +1,5 @@
 import { TARGET, TYPE, INIT_RATE } from '$lib/constants';
+import type { PublicPath } from 'wxt/browser';
 
 // Solution 1 - As of Jan 2023, service workers cannot directly interact with
 // the system clipboard using either `navigator.clipboard` or
@@ -11,10 +12,10 @@ export async function readFromClipboard({
 	pollingRate: number;
 	clearPrevText?: boolean;
 }) {
-	await setupOffscreenDocument('src/offscreen/index.html');
+	await setupOffscreenDocument('/offscreen.html');
 
 	// Now that we have an offscreen document, we can dispatch the message.
-	chrome.runtime.sendMessage({
+	browser.runtime.sendMessage({
 		target: TARGET.OFFSCREEN_DOC,
 		type: TYPE.READ_DATA_FROM_CLIPBOARD,
 		data: { pollingRate, clearPrevText }
@@ -23,12 +24,12 @@ export async function readFromClipboard({
 
 // A global promise to avoid concurrency issues
 let creating: Promise<void> | null;
-async function setupOffscreenDocument(path: string) {
+async function setupOffscreenDocument(path: PublicPath) {
 	// Check all windows controlled by the service worker to see if one
 	// of them is the offscreen document with the given path
-	const offscreenUrl = chrome.runtime.getURL(path);
-	const existingContexts = await chrome.runtime.getContexts({
-		contextTypes: [chrome.runtime.ContextType.OFFSCREEN_DOCUMENT],
+	const offscreenUrl = browser.runtime.getURL(path);
+	const existingContexts = await browser.runtime.getContexts({
+		contextTypes: [browser.runtime.ContextType.OFFSCREEN_DOCUMENT],
 		documentUrls: [offscreenUrl]
 	});
 
@@ -40,9 +41,9 @@ async function setupOffscreenDocument(path: string) {
 	if (creating) {
 		await creating;
 	} else {
-		creating = chrome.offscreen.createDocument({
+		creating = browser.offscreen.createDocument({
 			url: path,
-			reasons: [chrome.offscreen.Reason.CLIPBOARD],
+			reasons: [browser.offscreen.Reason.CLIPBOARD],
 			justification: 'Read text from the clipboard.'
 		});
 		await creating;
