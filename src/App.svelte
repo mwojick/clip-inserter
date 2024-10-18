@@ -61,10 +61,13 @@
 		chrome.storage.local.set({ options });
 	}
 
-	function onPollChange(e: Event) {
+	function onPollChanging(e: Event) {
 		const target = e.target as HTMLInputElement;
 		const value = parseInt(target.value);
 		options.pollingRate = value;
+	}
+
+	function onPollEnd() {
 		options.changingRate = true;
 		options.changingEls = false;
 		chrome.storage.local.set({ options });
@@ -97,9 +100,9 @@
 
 <main>
 	{#if currentUrl}
-		{#if currentUrl.startsWith('http') || currentUrl.startsWith('file')}
-			<label class="label cursor-pointer justify-center">
-				<span class="label-text text-base"
+		{#if (currentUrl.startsWith('http') || currentUrl.startsWith('file')) && !currentUrl.startsWith('https://chromewebstore')}
+			<label class="label ml-3 cursor-pointer justify-start">
+				<span class="label-text w-48 text-left text-base"
 					>{isClipEnabled ? 'Clipboard reader enabled' : 'Clipboard reader disabled'}</span
 				>
 				<input
@@ -110,16 +113,17 @@
 				/>
 			</label>
 		{:else}
-			<div class="label-text text-base">Only works on http(s) or file URLs</div>
+			<div class="label-text text-base">Disabled on this site</div>
 		{/if}
 
-		<h4 class="label-text mt-4">Polling rate: {options.pollingRate / 1000}s</h4>
+		<h4 class="label-text ml-24 mt-4 text-left">Polling rate: {options.pollingRate / 1000}s</h4>
 		<input
 			type="range"
 			min={minRange}
 			max={maxRange}
 			value={options.pollingRate}
-			onchange={onPollChange}
+			oninput={onPollChanging}
+			onchange={onPollEnd}
 			class="range range-primary mt-1"
 			step={minRange}
 		/>
