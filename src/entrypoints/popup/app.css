@@ -20,3 +20,13 @@
 		background-color: #dfdfdf;
 	}
 }
+
+body {
+	/* this is the default in chrome */
+	font-size: 75%;
+}
+
+html {
+	/* for firefox */
+	scrollbar-width: none;
+}

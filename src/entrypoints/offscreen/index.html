@@ -1,3 +1,13 @@
 <!doctype html>
-<textarea id="text"></textarea>
-<script type="module" src="offscreen.ts"></script>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<!-- https://github.com/wxt-dev/wxt/issues/113 -->
+		<meta name="manifest.exclude" content="['firefox']" />
+	</head>
+	<body>
+		<textarea id="text"></textarea>
+		<script type="module" src="offscreen.ts"></script>
+	</body>
+</html>

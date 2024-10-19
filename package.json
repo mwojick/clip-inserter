@@ -1,16 +1,16 @@
 {
 	"name": "clip-inserter",
-	"description": "Takes text copied to the clipboard and inserts it into the page. Clipboard icons created by Freepik - Flaticon.",
+	"description": "Takes text copied to the clipboard and inserts it into the page",
 	"private": true,
 	"version": "0.0.0",
 	"type": "module",
 	"scripts": {
-		"dev": "wxt",
-		"dev:firefox": "wxt -b firefox",
-		"build": "wxt build",
-		"build:firefox": "wxt build -b firefox",
-		"zip": "wxt zip",
-		"zip:firefox": "wxt zip -b firefox",
+		"dev": "wxt -b chrome --mv3",
+		"dev:firefox": "wxt -b firefox --mv2",
+		"build": "wxt build -b chrome --mv3",
+		"build:firefox": "wxt build -b firefox --mv2",
+		"zip": "wxt zip -b chrome --mv3",
+		"zip:firefox": "wxt zip -b firefox --mv2",
 		"check": "svelte-check --tsconfig ./tsconfig.json",
 		"postinstall": "wxt prepare"
 	},

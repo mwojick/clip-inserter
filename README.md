@@ -1,11 +1,12 @@
 ## Description
 
-- A Chrome extension that takes text copied to the clipboard and inserts it into the page.
-- Supports Chrome's Manifest V3 using a service worker and the offscreen API.
+- A browser extension that takes text copied to the clipboard and inserts it into the page.
+- Supports Chrome's Manifest V3 using the offscreen API.
 
 ## Requirements
 
-- Chrome 109+ for offscreen API support
+- Chrome 109+ (for offscreen API support)
+- Firefox (tested on 131)
 
 ## Functionality
 
@@ -18,8 +19,8 @@
   - This may fail if the document isn't focused at the time it attempts to clear it, but it's not likely to happen unless you go out of your way.
 
 - Can configure the following in the popup:
-  - Enable/disable on the current site/tab (only on http(s) and file URLs).
-  - The polling rate at which it checks the clipboard for new text (from 100ms to 3s).
+  - Enable/disable on the current site/tab (some pages are restricted like the new tab page).
+  - The polling rate at which it checks the clipboard for new text.
   - The HTML element that wraps the text when inserting into the page.
   - The query selector that's used to find where in the page to insert the text.
 
@@ -27,7 +28,8 @@
 
 ### To use in incognito mode or with local files:
 
-- Open **chrome://extensions**, go to the extension details, then click 'Allow in incognito' or 'Allow access to file URLs' respectively.
+- Chrome: **chrome://extensions** -> extension details -> 'Allow in incognito' or 'Allow access to file URLs'
+- Firefox: **about:addons** -> extension details -> 'Run in Private Windows'
 
 ## Acknowledgements
 
