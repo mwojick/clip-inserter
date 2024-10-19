@@ -98,11 +98,11 @@
 	}
 </script>
 
-<main>
+<main class="font-sans">
 	{#if currentUrl}
 		{#if (currentUrl.startsWith('http') || currentUrl.startsWith('file')) && !currentUrl.startsWith('https://chromewebstore')}
-			<label class="label ml-3 cursor-pointer justify-start">
-				<span class="label-text w-48 text-left text-base"
+			<label class="label ml-1 cursor-pointer justify-start">
+				<span class="label-text w-52 text-left text-base"
 					>{isClipEnabled ? 'Clipboard reader enabled' : 'Clipboard reader disabled'}</span
 				>
 				<input
@@ -141,7 +141,7 @@
 				<input
 					name="element"
 					type="text"
-					class="grow"
+					class="min-w-0"
 					placeholder={INIT_ELEMENT}
 					value={options.element}
 					autocomplete="off"
@@ -156,14 +156,14 @@
 				<input
 					name="selector"
 					type="text"
-					class="grow"
+					class="min-w-0"
 					placeholder={INIT_SELECTOR}
 					value={options.selector}
 					autocomplete="off"
 					title="Used to find what element on the page to insert the text into (called with document.querySelector)."
 				/>
 			</label>
-			<button class="btn btn-primary mt-4 w-36 text-sm">Update Element/Selector</button>
+			<button class="btn btn-primary mt-4 w-36 text-sm">Update Elements</button>
 		</form>
 
 		{#if options.allowedURL}
