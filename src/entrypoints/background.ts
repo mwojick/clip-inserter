@@ -65,10 +65,12 @@ export default defineBackground(() => {
 		}
 	}
 
+	const action = browser.action || browser.browserAction;
+
 	function badgeEnablers(tabId: number) {
 		return [
-			browser.action.setBadgeBackgroundColor({ tabId, color: '#a4b1fc' }),
-			browser.action.setBadgeText({
+			action.setBadgeBackgroundColor({ tabId, color: '#a4b1fc' }),
+			action.setBadgeText({
 				tabId,
 				text: 'ON'
 			})
@@ -81,7 +83,7 @@ export default defineBackground(() => {
 				target: TARGET.CONTENT_SCRIPT,
 				type: TYPE.REMOVE_LISTENER
 			}),
-			browser.action.setBadgeText({
+			action.setBadgeText({
 				tabId: tabId,
 				text: ''
 			})
