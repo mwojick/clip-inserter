@@ -58,7 +58,7 @@
 			options = { ...options, allowedURL: '', changingRate: false, changingEls: false };
 			allowedTabId = null;
 		}
-		browser.storage.local.set({ options });
+		browser.storage.local.set({ options: { ...options } });
 	}
 
 	function onPollChanging(e: Event) {
@@ -70,7 +70,7 @@
 	function onPollEnd() {
 		options.changingRate = true;
 		options.changingEls = false;
-		browser.storage.local.set({ options });
+		browser.storage.local.set({ options: { ...options } });
 	}
 
 	async function onsubmit(e: Event) {
@@ -89,7 +89,7 @@
 				changingRate: false,
 				changingEls: true
 			};
-			await browser.storage.local.set({ options });
+			await browser.storage.local.set({ options: { ...options } });
 			showSuccess = true;
 			setTimeout(() => {
 				showSuccess = false;

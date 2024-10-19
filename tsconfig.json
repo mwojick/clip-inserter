@@ -6,6 +6,6 @@
 			"$lib/*": ["./src/lib/*"]
 		},
 		"useDefineForClassFields": true,
-		"lib": ["DOM", "WebWorker"]
+		"lib": ["WebWorker", "DOM", "DOM.Iterable"]
 	}
 }
