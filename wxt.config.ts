@@ -29,8 +29,7 @@ export default defineConfig({
 
 		return {
 			name: 'Clip Inserter',
-			description:
-				'Takes text copied to the clipboard and inserts it into the page. Clipboard icons created by Freepik - Flaticon.',
+			description: 'Takes text copied to the clipboard and inserts it into the page',
 			version: '1.0.0',
 			action: { default_popup: '/popup.html' },
 			icons: {
