@@ -1,25 +1,30 @@
 import { TARGET, TYPE, INIT_RATE } from '$lib/constants';
 import type { PublicPath } from 'wxt/browser';
+import { getAllowedTabId } from '$lib/storage';
 
-// Solution 1 - As of Jan 2023, service workers cannot directly interact with
-// the system clipboard using either `navigator.clipboard` or
-// `document.execCommand()`. To work around this, we'll create an offscreen
-// document and delegate reading the clipboard to it.
-export async function readFromClipboard({
+export async function setupClipboardReader({
 	pollingRate = INIT_RATE,
 	clearPrevText = true
 }: {
 	pollingRate: number;
 	clearPrevText?: boolean;
 }) {
-	await setupOffscreenDocument('/offscreen.html');
+	if (import.meta.env.CHROME) {
+		// As of Jan 2023, service workers cannot directly interact with
+		// the system clipboard using either `navigator.clipboard` or
+		// `document.execCommand()`. To work around this, we'll create an offscreen
+		// document and delegate reading the clipboard to it.
+		await setupOffscreenDocument('/offscreen.html' as PublicPath);
 
-	// Now that we have an offscreen document, we can dispatch the message.
-	browser.runtime.sendMessage({
-		target: TARGET.OFFSCREEN_DOC,
-		type: TYPE.READ_DATA_FROM_CLIPBOARD,
-		data: { pollingRate, clearPrevText }
-	});
+		// Now that we have an offscreen document, we can dispatch the message.
+		browser.runtime.sendMessage({
+			target: TARGET.OFFSCREEN_DOC,
+			type: TYPE.READ_DATA_FROM_CLIPBOARD,
+			data: { pollingRate, clearPrevText }
+		});
+	} else {
+		pollForClipboard(pollingRate, clearPrevText);
+	}
 }
 
 // A global promise to avoid concurrency issues
@@ -51,10 +56,48 @@ async function setupOffscreenDocument(path: PublicPath) {
 	}
 }
 
-// Solution 2 – Once extension service workers can use the Clipboard API,
-// replace the offscreen document based implementation with something like this.
-//
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function readFromClipboardV2() {
-	navigator.clipboard.readText().then((text) => text);
+let interval: NodeJS.Timeout | null = null;
+let previousText = '';
+function pollForClipboard(pollingRate: number, clearPrevText: boolean) {
+	if (clearPrevText) {
+		previousText = '';
+	}
+	if (interval) {
+		clearInterval(interval);
+	}
+
+	interval = setInterval(() => {
+		navigator.clipboard.readText().then(async (newText) => {
+			if (newText && newText !== previousText) {
+				previousText = newText;
+				sendTextToPage(newText);
+			}
+		});
+	}, pollingRate);
+}
+
+export function disableClipboardPoll() {
+	previousText = '';
+
+	if (interval) {
+		clearInterval(interval);
+		interval = null;
+	}
+}
+
+export async function sendTextToPage(text: string) {
+	const allowedTabId = await getAllowedTabId();
+	if (allowedTabId) {
+		try {
+			await browser.tabs.sendMessage(allowedTabId, {
+				target: TARGET.CONTENT_SCRIPT,
+				type: TYPE.INSERT_TEXT,
+				data: text
+			});
+		} catch (error) {
+			console.error(error);
+		}
+	} else {
+		console.error('No allowedTabId found.');
+	}
 }

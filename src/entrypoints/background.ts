@@ -1,12 +1,14 @@
 import type { Options, Request } from '$lib/types';
 import { TARGET, TYPE, INIT_ELEMENT, INIT_SELECTOR } from '$lib/constants';
-import { readFromClipboard } from '$lib/read-clipboard';
+import { setupClipboardReader, disableClipboardPoll, sendTextToPage } from '$lib/read-clipboard';
 import { getAllowedTabId, setAllowedTabId, getOptions } from '$lib/storage';
 
 export default defineBackground(() => {
-	browser.runtime.onMessage.addListener(handleOffscreenMessage);
+	if (import.meta.env.CHROME) {
+		browser.runtime.onMessage.addListener(handleOffscreenMessage);
+	}
 
-	async function handleOffscreenMessage({ target, type, data }: Request<string>) {
+	function handleOffscreenMessage({ target, type, data }: Request<string>) {
 		if (target !== TARGET.SERVICE_WORKER) {
 			return;
 		}
@@ -14,20 +16,7 @@ export default defineBackground(() => {
 			console.warn(`Unexpected message type received: '${type}'.`);
 			return;
 		}
-		const allowedTabId = await getAllowedTabId();
-		if (allowedTabId) {
-			try {
-				await browser.tabs.sendMessage(allowedTabId, {
-					target: TARGET.CONTENT_SCRIPT,
-					type: TYPE.INSERT_TEXT,
-					data
-				});
-			} catch (error) {
-				console.error(error);
-			}
-		} else {
-			console.error('No allowedTabId found.');
-		}
+		sendTextToPage(data);
 	}
 
 	// this runs within the context of the page
@@ -90,8 +79,13 @@ export default defineBackground(() => {
 		];
 	}
 
-	function closeDoc() {
-		return browser.offscreen.closeDocument();
+	function disableClipboardReader() {
+		if (import.meta.env.CHROME) {
+			return browser.offscreen.closeDocument();
+		} else {
+			disableClipboardPoll();
+			return Promise.resolve();
+		}
 	}
 
 	async function enableClipboardReader(
@@ -118,7 +112,7 @@ export default defineBackground(() => {
 				func: setupContentMessage,
 				args: [TARGET, TYPE, clearClipboard, element || INIT_ELEMENT, selector || INIT_SELECTOR]
 			});
-			await readFromClipboard({ pollingRate });
+			await setupClipboardReader({ pollingRate });
 			await Promise.all(badgeEnablers(tabId));
 		} catch (error) {
 			console.error(error);
@@ -138,15 +132,15 @@ export default defineBackground(() => {
 	});
 
 	// clean up tab when navigating away or refreshing
-	browser.webNavigation.onBeforeNavigate.addListener(async ({ tabId, frameType }) => {
-		// FrameType is not accurate
-		if ((frameType as string) !== 'outermost_frame') {
+	browser.webNavigation.onBeforeNavigate.addListener(async ({ parentFrameId, tabId }) => {
+		// -1 is the top-level frame. Ignore other frames.
+		if (parentFrameId !== -1) {
 			return;
 		}
 		const allowedTabId = await getAllowedTabId();
 		if (allowedTabId === tabId) {
 			try {
-				await Promise.all([...tabCleanups(allowedTabId), closeDoc()]);
+				await Promise.all([...tabCleanups(allowedTabId), disableClipboardReader()]);
 			} catch (error) {
 				console.warn(error);
 			}
@@ -158,7 +152,7 @@ export default defineBackground(() => {
 		const allowedTabId = await getAllowedTabId();
 		if (allowedTabId === tabId) {
 			try {
-				await closeDoc();
+				await disableClipboardReader();
 			} catch (error) {
 				console.warn(error);
 			}
@@ -177,7 +171,7 @@ export default defineBackground(() => {
 			const allowedTabId = await getAllowedTabId();
 			if (changingRate) {
 				if (allowedTabId) {
-					await readFromClipboard({ pollingRate, clearPrevText: false });
+					await setupClipboardReader({ pollingRate, clearPrevText: false });
 				}
 				return;
 			}
@@ -202,7 +196,7 @@ export default defineBackground(() => {
 			if (!allowedURL && allowedTabId) {
 				// disable clipboard reader
 				try {
-					await Promise.all([...tabCleanups(allowedTabId), closeDoc()]);
+					await Promise.all([...tabCleanups(allowedTabId), disableClipboardReader()]);
 				} catch (error) {
 					console.warn(error);
 				}
