@@ -44,7 +44,12 @@ export default defineConfig({
 				open_in_tab: true
 			},
 			permissions,
-			host_permissions: ['http://*/*', 'https://*/*', 'file://*/*']
+			host_permissions: ['http://*/*', 'https://*/*', 'file://*/*'],
+			browser_specific_settings: {
+				gecko: {
+					id: 'clip-inserter@example.com'
+				}
+			}
 		};
 	}
 });
