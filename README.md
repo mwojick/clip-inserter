@@ -46,3 +46,17 @@
 - [Svelte](https://svelte.dev/)
 - [Tailwind](https://tailwindcss.com/)
 - [Daisy UI](https://daisyui.com/)
+
+## Building
+
+```bash
+pnpm i
+
+# Build for Chrome
+pnpm build
+pnpm zip
+
+# Build for Firefox
+pnpm build:firefox
+pnpm zip:firefox
+```
