@@ -1,3 +1,7 @@
+## [Chrome web store](https://chromewebstore.google.com/detail/clip-inserter/jopbnihpjbeladnonckkpocbdcglddpb)
+
+## [Firefox add-ons](https://addons.mozilla.org/en-US/firefox/addon/clip-inserter/) (also available on Firefox for Android)
+
 ## Description
 
 - A browser extension that takes text copied to the clipboard and inserts it into the page.
@@ -6,7 +10,7 @@
 ## Requirements
 
 - Chrome 109+ (for offscreen API support)
-- Firefox (tested on 131)
+- Firefox (tested on 131+)
 
 ## Functionality
 
@@ -16,7 +20,7 @@
 - Disabled automatically when navigating away or closing the tab/window.
 - Attempts to clear your clipboard on activation so that you don't inadvertently paste something that was on the clipboard beforehand.
 
-  - This may fail if the document isn't focused at the time it attempts to clear it, but it's not likely to happen unless you go out of your way.
+  - This may fail if the document isn't focused at the time it attempts to clear it (doesn't seem to work on Android Firefox).
 
 - Can configure the following in the popup:
   - Enable/disable on the current site/tab (some pages are restricted like the new tab page).
