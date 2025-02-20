@@ -46,12 +46,6 @@
 		const target = e.target as HTMLInputElement;
 		const checked = target.checked;
 		if (checked) {
-			try {
-				await navigator.clipboard.writeText('');
-			} catch (error) {
-				console.warn(error);
-			}
-
 			options = { ...options, allowedURL: currentUrl, changingRate: false, changingEls: false };
 			allowedTabId = options.popupTabId;
 		} else {

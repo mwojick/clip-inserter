@@ -46,11 +46,18 @@ function handleClipboardRead(pollingRate: number, clearPrevText: boolean) {
 		throw new TypeError(`Value provided must be a 'number', got '${typeof pollingRate}'.`);
 	}
 
-	if (clearPrevText) {
-		previousText = '';
-	}
 	if (interval) {
 		clearInterval(interval);
+	}
+
+	if (clearPrevText) {
+		previousText = '';
+		// clear the system clipboard:
+		// value can't be empty or else nothing gets copied with execCommand.
+		// this is fine because we trim the value before checking for a change anyway.
+		textEl.value = ' ';
+		textEl.select();
+		document.execCommand('copy');
 	}
 
 	interval = setInterval(() => {

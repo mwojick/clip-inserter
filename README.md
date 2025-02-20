@@ -18,9 +18,9 @@
 - Remembers the last site you enabled it on so that it switches on automatically when navigating back to the site.
   - To prevent it activating on its own in the background, the tab needs to be active when loading the page (i.e. it won't auto-enable on a tab that loads in the background).
 - Disabled automatically when navigating away or closing the tab/window.
-- Attempts to clear your clipboard on activation so that you don't inadvertently paste something that was on the clipboard beforehand.
+- Clears the clipboard on activation so that you don't inadvertently paste something that was on the clipboard beforehand.
 
-  - This may fail if the document isn't focused at the time it attempts to clear it (doesn't seem to work on Android Firefox).
+  - Note: Chrome has a limitation where the clipboard can't be completely cleared when the document isn't focused, so instead a single space is copied to the clipboard. In practice though this doesn't effect functionality since it's still considered empty when checking for changes to the clipboard.
 
 - Can configure the following in the popup:
   - Enable/disable on the current site/tab (some pages are restricted like the new tab page).

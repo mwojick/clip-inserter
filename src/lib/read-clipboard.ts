@@ -59,15 +59,20 @@ async function setupOffscreenDocument(path: PublicPath) {
 let interval: NodeJS.Timeout | null = null;
 let previousText = '';
 function pollForClipboard(pollingRate: number, clearPrevText: boolean) {
-	if (clearPrevText) {
-		previousText = '';
-	}
 	if (interval) {
 		clearInterval(interval);
 	}
 
+	if (clearPrevText) {
+		previousText = '';
+		navigator.clipboard.writeText('').catch((error) => {
+			console.warn(error);
+		});
+	}
+
 	interval = setInterval(() => {
-		navigator.clipboard.readText().then(async (newText) => {
+		navigator.clipboard.readText().then((newText) => {
+			newText = newText.trim();
 			if (newText && newText !== previousText) {
 				previousText = newText;
 				sendTextToPage(newText);
