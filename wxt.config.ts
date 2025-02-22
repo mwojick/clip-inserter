@@ -30,7 +30,7 @@ export default defineConfig({
 		return {
 			name: 'Clip Inserter',
 			description: 'Takes text copied to the clipboard and inserts it into the page',
-			version: '1.0.0',
+			version: '1.1.0',
 			action: { default_popup: '/popup.html' },
 			icons: {
 				'16': '/icon/16.png',

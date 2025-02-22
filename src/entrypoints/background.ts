@@ -23,16 +23,9 @@ export default defineBackground(() => {
 	function setupContentMessage(
 		_TARGET: typeof TARGET,
 		_TYPE: typeof TYPE,
-		clearClipboard: boolean,
 		element: string,
 		selector: string
 	) {
-		if (clearClipboard) {
-			navigator.clipboard.writeText('').catch((error) => {
-				console.warn(error);
-			});
-		}
-
 		// wxt/browser is not defined within content scripts
 		// https://github.com/wxt-dev/wxt/issues/616#issuecomment-2058972036
 		chrome.runtime.onMessage.addListener(handleWorkerMessage);
@@ -88,12 +81,8 @@ export default defineBackground(() => {
 		}
 	}
 
-	async function enableClipboardReader(
-		tabId: number,
-		allowedTabId: number | null,
-		clearClipboard = true
-	) {
-		const { pollingRate, element, selector } = await getOptions();
+	async function enableClipboardReader(tabId: number, allowedTabId: number | null) {
+		const { pollingRate, element, selector, clearOnInsert } = await getOptions();
 
 		// clean up old tab when enabling on a new tab
 		if (allowedTabId) {
@@ -110,9 +99,9 @@ export default defineBackground(() => {
 			await browser.scripting.executeScript({
 				target: { tabId },
 				func: setupContentMessage,
-				args: [TARGET, TYPE, clearClipboard, element || INIT_ELEMENT, selector || INIT_SELECTOR]
+				args: [TARGET, TYPE, element || INIT_ELEMENT, selector || INIT_SELECTOR]
 			});
-			await setupClipboardReader({ pollingRate });
+			await setupClipboardReader({ pollingRate, clearOnInsert });
 			await Promise.all(badgeEnablers(tabId));
 		} catch (error) {
 			console.error(error);
@@ -165,13 +154,21 @@ export default defineBackground(() => {
 		const newOpts: Options = changes.options?.newValue;
 		if (area === 'local' && newOpts) {
 			const oldOpts: Options = changes.options?.oldValue || {};
-			const { allowedURL, popupTabId, changingRate, pollingRate, changingEls, element, selector } =
-				newOpts;
+			const {
+				allowedURL,
+				popupTabId,
+				pollingRate,
+				changingReaderOpts,
+				changingEls,
+				element,
+				selector,
+				clearOnInsert
+			} = newOpts;
 
 			const allowedTabId = await getAllowedTabId();
-			if (changingRate) {
+			if (changingReaderOpts) {
 				if (allowedTabId) {
-					await setupClipboardReader({ pollingRate, clearPrevText: false });
+					await setupClipboardReader({ pollingRate, clearPrevText: false, clearOnInsert });
 				}
 				return;
 			}
@@ -183,7 +180,7 @@ export default defineBackground(() => {
 						await browser.scripting.executeScript({
 							target: { tabId: allowedTabId },
 							func: setupContentMessage,
-							args: [TARGET, TYPE, false, element || INIT_ELEMENT, selector || INIT_SELECTOR]
+							args: [TARGET, TYPE, element || INIT_ELEMENT, selector || INIT_SELECTOR]
 						});
 						await Promise.all(badgeEnablers(allowedTabId));
 					} catch (error) {
@@ -202,9 +199,8 @@ export default defineBackground(() => {
 				}
 				await setAllowedTabId(null).catch((e) => console.error(e));
 			} else if (popupTabId && (allowedTabId !== popupTabId || oldOpts.allowedURL !== allowedURL)) {
-				// don't clear clipboard on enable: it's done in the popup instead because
-				// it doesn't work here (document isn't in focus while using popup).
-				enableClipboardReader(popupTabId, allowedTabId, false);
+				// else if the popup tab id has changed, or the allowed url has changed, enable the clipboard reader on the new tab
+				enableClipboardReader(popupTabId, allowedTabId);
 			}
 		}
 	});
