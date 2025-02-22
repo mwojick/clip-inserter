@@ -7,14 +7,14 @@ function handleWorkerMessage({
 	target,
 	type,
 	data
-}: Request<{ pollingRate: number; clearPrevText: boolean }>) {
+}: Request<{ pollingRate: number; clearPrevText: boolean; clearOnInsert: boolean }>) {
 	// Return early if this message isn't meant for the offscreen document.
 	if (target !== TARGET.OFFSCREEN_DOC) {
 		return;
 	}
 
 	if (type === TYPE.READ_DATA_FROM_CLIPBOARD) {
-		handleClipboardRead(data.pollingRate, data.clearPrevText);
+		handleClipboardRead(data.pollingRate, data.clearPrevText, data.clearOnInsert);
 	} else {
 		console.warn(`Unexpected message type received: '${type}'.`);
 	}
@@ -41,7 +41,7 @@ let previousText = '';
 // The `navigator.clipboard` API requires that the window is focused,
 // but offscreen documents cannot be focused.
 // As such, we have to fall back to `document.execCommand()`.
-function handleClipboardRead(pollingRate: number, clearPrevText: boolean) {
+function handleClipboardRead(pollingRate: number, clearPrevText: boolean, clearOnInsert: boolean) {
 	if (typeof pollingRate !== 'number') {
 		throw new TypeError(`Value provided must be a 'number', got '${typeof pollingRate}'.`);
 	}
@@ -51,13 +51,7 @@ function handleClipboardRead(pollingRate: number, clearPrevText: boolean) {
 	}
 
 	if (clearPrevText) {
-		previousText = '';
-		// clear the system clipboard:
-		// value can't be empty or else nothing gets copied with execCommand.
-		// this is fine because we trim the value before checking for a change anyway.
-		textEl.value = ' ';
-		textEl.select();
-		document.execCommand('copy');
+		clearText();
 	}
 
 	interval = setInterval(() => {
@@ -73,6 +67,19 @@ function handleClipboardRead(pollingRate: number, clearPrevText: boolean) {
 				type: TYPE.CLIPBOARD_TEXT,
 				data: newText
 			});
+			if (clearOnInsert) {
+				clearText();
+			}
 		}
 	}, pollingRate);
+}
+
+function clearText() {
+	previousText = '';
+	// clear the system clipboard:
+	// value can't be empty or else nothing gets copied with execCommand.
+	// this is fine because we trim the value before checking for a change anyway.
+	textEl.value = ' ';
+	textEl.select();
+	document.execCommand('copy');
 }

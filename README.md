@@ -24,6 +24,7 @@
 
 - Can configure the following in the popup:
   - Enable/disable on the current site/tab (some pages are restricted like the new tab page).
+  - Clear the clipboard on page insert.
   - The polling rate at which it checks the clipboard for new text.
   - The HTML element that wraps the text when inserting into the page.
   - The query selector that's used to find where in the page to insert the text.

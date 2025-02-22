@@ -14,7 +14,8 @@
 		pollingRate: INIT_RATE,
 		element: '',
 		selector: '',
-		changingRate: false,
+		clearOnInsert: false,
+		changingReaderOpts: false,
 		changingEls: false
 	});
 
@@ -42,16 +43,33 @@
 		setInitialData().catch((e) => console.error(e));
 	});
 
-	async function onToggle(e: Event) {
+	function onToggleEnabled(e: Event) {
 		const target = e.target as HTMLInputElement;
 		const checked = target.checked;
+		options = {
+			...options,
+			changingReaderOpts: false,
+			changingEls: false
+		};
 		if (checked) {
-			options = { ...options, allowedURL: currentUrl, changingRate: false, changingEls: false };
+			options.allowedURL = currentUrl;
 			allowedTabId = options.popupTabId;
 		} else {
-			options = { ...options, allowedURL: '', changingRate: false, changingEls: false };
+			options.allowedURL = '';
 			allowedTabId = null;
 		}
+		browser.storage.local.set({ options: { ...options } });
+	}
+
+	function onToggleClearOnInsert(e: Event) {
+		const target = e.target as HTMLInputElement;
+		const checked = target.checked;
+		options = {
+			...options,
+			clearOnInsert: checked,
+			changingReaderOpts: true,
+			changingEls: false
+		};
 		browser.storage.local.set({ options: { ...options } });
 	}
 
@@ -62,7 +80,7 @@
 	}
 
 	function onPollEnd() {
-		options.changingRate = true;
+		options.changingReaderOpts = true;
 		options.changingEls = false;
 		browser.storage.local.set({ options: { ...options } });
 	}
@@ -80,7 +98,7 @@
 				...options,
 				element: element,
 				selector: selector,
-				changingRate: false,
+				changingReaderOpts: false,
 				changingEls: true
 			};
 			await browser.storage.local.set({ options: { ...options } });
@@ -97,18 +115,30 @@
 		{#if (currentUrl.startsWith('http') || currentUrl.startsWith('file')) && !currentUrl.startsWith('https://chromewebstore')}
 			<label class="label ml-1 cursor-pointer justify-start">
 				<span class="label-text w-52 text-left text-base"
-					>{isClipEnabled ? 'Clipboard reader enabled' : 'Clipboard reader disabled'}</span
+					>Clipboard reader {isClipEnabled ? 'enabled' : 'disabled'}</span
 				>
 				<input
 					type="checkbox"
 					class="toggle toggle-primary ml-4"
-					onchange={onToggle}
+					onchange={onToggleEnabled}
 					checked={isClipEnabled}
 				/>
 			</label>
 		{:else}
 			<div class="label-text text-base">Disabled on this site</div>
 		{/if}
+
+		<label class="label ml-1 mt-2 cursor-pointer justify-start">
+			<span class="label-text w-52 text-left text-base"
+				>Clear on insert {options.clearOnInsert ? 'enabled' : 'disabled'}</span
+			>
+			<input
+				type="checkbox"
+				class="toggle toggle-primary ml-4"
+				onchange={onToggleClearOnInsert}
+				checked={options.clearOnInsert}
+			/>
+		</label>
 
 		<h4 class="label-text ml-24 mt-4 text-left">Polling rate: {options.pollingRate / 1000}s</h4>
 		<input

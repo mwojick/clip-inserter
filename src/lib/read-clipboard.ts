@@ -4,10 +4,12 @@ import { getAllowedTabId } from '$lib/storage';
 
 export async function setupClipboardReader({
 	pollingRate = INIT_RATE,
-	clearPrevText = true
+	clearPrevText = true,
+	clearOnInsert = false
 }: {
 	pollingRate: number;
 	clearPrevText?: boolean;
+	clearOnInsert?: boolean;
 }) {
 	if (import.meta.env.CHROME) {
 		// As of Jan 2023, service workers cannot directly interact with
@@ -20,10 +22,10 @@ export async function setupClipboardReader({
 		browser.runtime.sendMessage({
 			target: TARGET.OFFSCREEN_DOC,
 			type: TYPE.READ_DATA_FROM_CLIPBOARD,
-			data: { pollingRate, clearPrevText }
+			data: { pollingRate, clearPrevText, clearOnInsert }
 		});
 	} else {
-		pollForClipboard(pollingRate, clearPrevText);
+		pollForClipboard(pollingRate, clearPrevText, clearOnInsert);
 	}
 }
 
@@ -58,16 +60,13 @@ async function setupOffscreenDocument(path: PublicPath) {
 
 let interval: NodeJS.Timeout | null = null;
 let previousText = '';
-function pollForClipboard(pollingRate: number, clearPrevText: boolean) {
+function pollForClipboard(pollingRate: number, clearPrevText: boolean, clearOnInsert: boolean) {
 	if (interval) {
 		clearInterval(interval);
 	}
 
 	if (clearPrevText) {
-		previousText = '';
-		navigator.clipboard.writeText('').catch((error) => {
-			console.warn(error);
-		});
+		clearText();
 	}
 
 	interval = setInterval(() => {
@@ -76,9 +75,19 @@ function pollForClipboard(pollingRate: number, clearPrevText: boolean) {
 			if (newText && newText !== previousText) {
 				previousText = newText;
 				sendTextToPage(newText);
+				if (clearOnInsert) {
+					clearText();
+				}
 			}
 		});
 	}, pollingRate);
+}
+
+function clearText() {
+	previousText = '';
+	navigator.clipboard.writeText('').catch((error) => {
+		console.warn(error);
+	});
 }
 
 export function disableClipboardPoll() {

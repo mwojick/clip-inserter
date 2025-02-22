@@ -82,7 +82,7 @@ export default defineBackground(() => {
 	}
 
 	async function enableClipboardReader(tabId: number, allowedTabId: number | null) {
-		const { pollingRate, element, selector } = await getOptions();
+		const { pollingRate, element, selector, clearOnInsert } = await getOptions();
 
 		// clean up old tab when enabling on a new tab
 		if (allowedTabId) {
@@ -101,7 +101,7 @@ export default defineBackground(() => {
 				func: setupContentMessage,
 				args: [TARGET, TYPE, element || INIT_ELEMENT, selector || INIT_SELECTOR]
 			});
-			await setupClipboardReader({ pollingRate });
+			await setupClipboardReader({ pollingRate, clearOnInsert });
 			await Promise.all(badgeEnablers(tabId));
 		} catch (error) {
 			console.error(error);
@@ -154,13 +154,21 @@ export default defineBackground(() => {
 		const newOpts: Options = changes.options?.newValue;
 		if (area === 'local' && newOpts) {
 			const oldOpts: Options = changes.options?.oldValue || {};
-			const { allowedURL, popupTabId, changingRate, pollingRate, changingEls, element, selector } =
-				newOpts;
+			const {
+				allowedURL,
+				popupTabId,
+				pollingRate,
+				changingReaderOpts,
+				changingEls,
+				element,
+				selector,
+				clearOnInsert
+			} = newOpts;
 
 			const allowedTabId = await getAllowedTabId();
-			if (changingRate) {
+			if (changingReaderOpts) {
 				if (allowedTabId) {
-					await setupClipboardReader({ pollingRate, clearPrevText: false });
+					await setupClipboardReader({ pollingRate, clearPrevText: false, clearOnInsert });
 				}
 				return;
 			}

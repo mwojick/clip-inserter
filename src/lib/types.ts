@@ -10,6 +10,7 @@ export type Options = {
 	pollingRate: number;
 	element: string;
 	selector: string;
-	changingRate: boolean;
+	clearOnInsert: boolean;
 	changingEls: boolean;
+	changingReaderOpts: boolean;
 };
