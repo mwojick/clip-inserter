@@ -5,6 +5,7 @@
 ## Description
 
 - A browser extension that takes text copied to the clipboard and inserts it into the page.
+- Primarily meant to be used alongside apps that augment the inserted text, such as [Clip Translate](https://clip-translate.vercel.app/)
 - Supports Chrome's Manifest V3 using the offscreen API.
 
 ## Requirements
@@ -52,16 +53,48 @@
 - [Tailwind](https://tailwindcss.com/)
 - [Daisy UI](https://daisyui.com/)
 
-## Building
+## Build / Zip
 
 ```bash
 pnpm i
 
-# Build for Chrome
+# Chrome
 pnpm build
 pnpm zip
 
-# Build for Firefox
+# Firefox
 pnpm build:firefox
 pnpm zip:firefox
 ```
+
+## Development
+
+### Using Nix:
+
+- Ensure you have Nix installed: https://nixos.org/download.html
+- And flakes enabled: https://nixos.wiki/wiki/Flakes
+- Install nix-direnv: https://github.com/nix-community/nix-direnv
+- Hook direnv into shell: https://direnv.net/docs/hook.html
+
+#### direnv and nix-direnv will allow nix deps to be auto loaded into your shell when you cd into the repo.
+
+```bash
+# Allow direnv to use .envrc
+direnv allow
+
+# Install dependencies
+pnpm install
+
+# Run in dev mode for Chrome (Manifest V3)
+pnpm dev
+
+# Run in dev mode for Firefox (Manifest V2)
+pnpm dev:firefox
+```
+
+The dev server will start and provide instructions for loading the unpacked extension in your browser:
+
+1. For Chrome: Go to `chrome://extensions/`, enable "Developer mode", and click "Load unpacked" to select the extension's build directory.
+2. For Firefox: Go to `about:debugging#/runtime/this-firefox`, click "Load Temporary Add-on...", and select the extension's manifest file.
+
+After making changes to the code, the development server will automatically rebuild the extension.
