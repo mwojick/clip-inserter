@@ -199,6 +199,11 @@
 					title={options.allowedURL}
 					target="_blank"
 					rel="noreferrer"
+					onclick={(e) => {
+						e.preventDefault();
+						browser.tabs.create({ url: options.allowedURL });
+						window.close();
+					}}
 				>
 					{options.allowedURL}
 				</a>
