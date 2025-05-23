@@ -5,7 +5,7 @@
 ## Description
 
 - A browser extension that takes text copied to the clipboard and inserts it into the page.
-- Primarily meant to be used alongside apps that augment the inserted text, such as [Clip Translate](https://clip-translate.vercel.app/)
+- Primarily meant to be used alongside apps that augment the inserted text, such as [Cliperl](https://www.cliperl.com/) (for language learning or translation)
 - Supports Chrome's Manifest V3 using the offscreen API.
 
 ## Requirements
